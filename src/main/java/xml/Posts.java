@@ -1,22 +1,26 @@
 package xml;
 
-import java.util.List;
-
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-@XmlRootElement  
+//thanks http://pojo.sodhanalibrary.com/pojoFromXSD.html
+@XmlRootElement(name = "posts")
 public class Posts {
-	@XmlElement(name="row")
-	List<Row> rows;
-
-	public List<Row> getRows() {
-		return rows;
+	private Row[] row;
+	
+	@XmlElement(name = "row")
+	public Row[] getRow() {
+		return row;
 	}
 
-	public void setRows(List<Row> rows) {
-		this.rows = rows;
+	public void setRow(Row[] row) {
+		this.row = row;
 	}
-	
-	
+
+	@Override
+	public String toString() {
+		return "ClassPojo [row = " + row + "]";
+	}
 }

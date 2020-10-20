@@ -1,0 +1,38 @@
+<!-- thanks https://www.freeformatter.com/xsd-generator.html#ad-output  -->
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="posts">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="row" maxOccurs="unbounded" minOccurs="0">
+          <xs:complexType>
+            <xs:simpleContent>
+              <xs:extension base="xs:string">
+                <xs:attribute type="xs:byte" name="Id" use="optional"/>
+                <xs:attribute type="xs:byte" name="PostTypeId" use="optional"/>
+                <xs:attribute type="xs:byte" name="AcceptedAnswerId" use="optional"/>
+                <xs:attribute type="xs:dateTime" name="CreationDate" use="optional"/>
+                <xs:attribute type="xs:short" name="Score" use="optional"/>
+                <xs:attribute type="xs:int" name="ViewCount" use="optional"/>
+                <xs:attribute type="xs:string" name="Body" use="optional"/>
+                <xs:attribute type="xs:byte" name="OwnerUserId" use="optional"/>
+                <xs:attribute type="xs:int" name="LastEditorUserId" use="optional"/>
+                <xs:attribute type="xs:string" name="LastEditorDisplayName" use="optional"/>
+                <xs:attribute type="xs:dateTime" name="LastEditDate" use="optional"/>
+                <xs:attribute type="xs:dateTime" name="LastActivityDate" use="optional"/>
+                <xs:attribute type="xs:string" name="Title" use="optional"/>
+                <xs:attribute type="xs:string" name="Tags" use="optional"/>
+                <xs:attribute type="xs:byte" name="AnswerCount" use="optional"/>
+                <xs:attribute type="xs:byte" name="CommentCount" use="optional"/>
+                <xs:attribute type="xs:byte" name="FavoriteCount" use="optional"/>
+                <xs:attribute type="xs:dateTime" name="CommunityOwnedDate" use="optional"/>
+                <xs:attribute type="xs:string" name="ContentLicense" use="optional"/>
+                <xs:attribute type="xs:byte" name="ParentId" use="optional"/>
+              </xs:extension>
+            </xs:simpleContent>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
+

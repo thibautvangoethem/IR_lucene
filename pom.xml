@@ -9,10 +9,10 @@
 
 	<properties>
 		<maven.compiler.target>11</maven.compiler.target>
-	    <maven.compiler.source>11</maven.compiler.source>
+		<maven.compiler.source>11</maven.compiler.source>
 		<lucene.version>8.6.3</lucene.version>
-        <javax.activation.version>1.2.0</javax.activation.version>
-        <jaxb.api.version>2.3.0</jaxb.api.version>
+		<javax.activation.version>1.2.0</javax.activation.version>
+		<jaxb.api.version>2.3.0</jaxb.api.version>
 	</properties>
 	<dependencies>
 		<!-- lucene dependencies -->
@@ -36,7 +36,7 @@
 			<artifactId>lucene-analyzers-common</artifactId>
 			<version>${lucene.version}</version>
 		</dependency>
-		<!--JAXB dependencies  -->
+		<!--JAXB dependencies -->
 		<dependency>
 			<groupId>com.sun.activation</groupId>
 			<artifactId>javax.activation</artifactId>

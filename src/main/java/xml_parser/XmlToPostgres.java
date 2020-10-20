@@ -18,9 +18,9 @@ public class XmlToPostgres {
             File file = new File(resource.toURI());    
             JAXBContext jaxbContext = JAXBContext.newInstance(Posts.class);    
          
-            Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();    
+            Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
             Posts e=(Posts) jaxbUnmarshaller.unmarshal(file);    
-            for(Row row:e.getRows()) {
+            for(Row row:e.getRow()) {
             	System.out.print(row.getId());
             }
             
