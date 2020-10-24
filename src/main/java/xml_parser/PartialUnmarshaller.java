@@ -29,6 +29,7 @@ public class PartialUnmarshaller<T> {
         this.clazz = clazz;
         this.unmarshaller = JAXBContext.newInstance(clazz).createUnmarshaller();
         this.reader = XMLInputFactory.newInstance().createXMLStreamReader(stream);
+        
 
         /* ignore headers */
         skipElements(START_DOCUMENT, DTD);
