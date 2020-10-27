@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <settings>
 	<jdbc_string>jdbc:postgresql://localhost:5432/ir_dump?user=postgres&amp;password=postgres</jdbc_string>
-	<dump_location>D:\stackoverflow_dump\Posts.xml</dump_location>
+	<dump_location>C:\Users\thiba\OneDrive\Documenten\stackoverflow_data\posts.xml</dump_location>
 </settings>
