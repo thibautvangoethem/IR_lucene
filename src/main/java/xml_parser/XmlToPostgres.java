@@ -39,7 +39,7 @@ public class XmlToPostgres {
 		try (Connection conn = DriverManager.getConnection(url);
 				PreparedStatement stmt = conn.prepareStatement(inputStatement);) {
 			conn.setAutoCommit(false);
-			SaxHandler saxHandler=new SaxHandler(conn,stmt);
+			PostgressSaxHandler saxHandler=new PostgressSaxHandler(conn,stmt);
 			SAXParserFactory factory = SAXParserFactory.newInstance();
 			factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, false);
 			SAXParser saxParser = factory.newSAXParser();

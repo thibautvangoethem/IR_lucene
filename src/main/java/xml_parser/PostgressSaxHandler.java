@@ -13,7 +13,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class SaxHandler extends DefaultHandler {
+public class PostgressSaxHandler extends DefaultHandler {
 	static DateFormat timestampFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
 	private Connection conn;
 
@@ -21,7 +21,7 @@ public class SaxHandler extends DefaultHandler {
 	private int counter = 0;
 	private long startTime = new Date().getTime();
 
-	public SaxHandler(Connection conn, PreparedStatement stmt) {
+	public PostgressSaxHandler(Connection conn, PreparedStatement stmt) {
 		super();
 		this.conn = conn;
 		this.stmt = stmt;
