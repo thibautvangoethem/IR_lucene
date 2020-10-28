@@ -39,7 +39,7 @@ public class XmlToPostgres {
 //		File file = new File(resource.toURI());
 		System.out.println("start unmarshelling");
 		String inputStatement = "INSERT INTO public.documents"
-				+ "(id, posttypeid, acceptedanswerid, parentid, creationdate, score, viewcount, body, lasteditdate, lastactivity, title, tags, answercount, commentcount, favoritecount)"
+				+ "(Id, PostTypeId, AcceptedAnswerId, ParentId,CreationDate, Score, ViewCount, Body, LastEditDate, LastActivityDate, Title, Tags, AnswerCount, CommentCount, FavoriteCount)"
 				+ "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
 		
