@@ -32,17 +32,19 @@ public class LuceneSaxHandler extends DefaultHandler {
 		if (qName.equalsIgnoreCase("row")) {
 
 			try {
-				String title=attributes.getValue("Title");
-				String body=attributes.getValue("Body");
-				if(title!=null ) {
-					addDoc(title, body);
-				}
-				counter++;
-				if (counter > 100000) {
-					counter = 0;
-					System.out.println("persisting 100000 rows");
-					long current = new Date().getTime();
-					System.out.println("it took " + Long.toString(current - startTime) + " ms");
+				if (attributes.getValue("PostTypeId").equals("1")) {
+					String title = attributes.getValue("Title");
+					String body = attributes.getValue("Body");
+					if (title != null) {
+						addDoc(title, body);
+					}
+					counter++;
+					if (counter > 100000) {
+						counter = 0;
+						System.out.println("persisting 100000 rows");
+						long current = new Date().getTime();
+						System.out.println("it took " + Long.toString(current - startTime) + " ms");
+					}
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -58,13 +60,12 @@ public class LuceneSaxHandler extends DefaultHandler {
 	public void characters(char ch[], int start, int length) throws SAXException {
 
 	}
-	
+
 	private void addDoc(String title, String body) throws IOException {
 		Document doc = new Document();
 		doc.add(new TextField("title", title, Field.Store.YES));
 		doc.add(new TextField("body", body, Field.Store.YES));
 		writer.addDocument(doc);
 	}
-	
 
 }
