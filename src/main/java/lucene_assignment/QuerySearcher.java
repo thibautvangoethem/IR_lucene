@@ -18,6 +18,9 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.BooleanClause.Occur;
+import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.BoostQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
@@ -34,7 +37,14 @@ public class QuerySearcher {
 
 		IndexWriterConfig config = new IndexWriterConfig(analyzer);
 		
-		Query q = new QueryParser("title", analyzer).parse("python");
+		Query qTitle = new QueryParser("title", analyzer).parse("python");
+		Query qBody = new QueryParser("body", analyzer).parse("python");
+		BoostQuery boostedTitle = new BoostQuery(qTitle, 2);
+		
+		BooleanQuery.Builder queryBuilder = new BooleanQuery.Builder();
+		queryBuilder.add(boostedTitle, Occur.SHOULD);
+		queryBuilder.add(qBody, Occur.SHOULD);
+		BooleanQuery q = queryBuilder.build();
 		
 		int hitsPerPage = 10;
 		IndexReader reader = DirectoryReader.open(index);
