@@ -36,6 +36,11 @@
 			<artifactId>lucene-analyzers-common</artifactId>
 			<version>${lucene.version}</version>
 		</dependency>
+		<dependency>
+		    <groupId>org.apache.lucene</groupId>
+		    <artifactId>lucene-grouping</artifactId>
+		    <version>${lucene.version}</version>
+		</dependency>
 		<!--JAXB dependencies -->
 		<dependency>
 			<groupId>com.sun.activation</groupId>
