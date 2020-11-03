@@ -17,3 +17,12 @@ CREATE TABLE documents (
     CommentCount INTEGER,
     FavoriteCount INTEGER
 );
+
+DROP TABLE IF EXISTS answers;
+
+CREATE TABLE answers(
+    Id INTEGER PRIMARY KEY,
+    ParentId INTEGER,
+    Score INTEGER,
+    Body TEXT
+);
