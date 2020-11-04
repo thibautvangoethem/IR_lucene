@@ -48,8 +48,12 @@ public class LuceneSaxHandler extends DefaultHandler {
 					id = attributes.getValue("ParentId");
 
 				}
-
-				addDoc(id, title, body, score, answer);
+				String tags = attributes.getValue("Tags");
+				if (tags != null){
+					tags = tags.substring(1, tags.length()-1);
+					tags = tags.replaceAll("><", " ");
+				}
+				addDoc(id, title, body, tags, score, answer);
 				counter++;
 				if (counter > 100000) {
 					counter = 0;
@@ -72,7 +76,7 @@ public class LuceneSaxHandler extends DefaultHandler {
 
 	}
 
-	private void addDoc(String id, String title, String body, int score, boolean answer) throws IOException {
+	private void addDoc(String id, String title, String body, String tags, int score, boolean answer) throws IOException {
 		Document doc = new Document();
 		doc.add(new IntPoint("id", Integer.parseInt(id)));
 		doc.add(new TextField("id", id, Field.Store.YES));
@@ -83,6 +87,9 @@ public class LuceneSaxHandler extends DefaultHandler {
 //		doc.add(new IntPoint("score", score));
 		doc.add(new NumericDocValuesField("score", score));
 		doc.add(new StoredField("answer", Boolean.toString(answer)));
+		if (tags != null) {
+			doc.add(new TextField("tags", tags, Field.Store.YES));
+		}
 		writer.addDocument(doc);
 	}
 
