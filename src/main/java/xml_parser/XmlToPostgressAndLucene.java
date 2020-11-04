@@ -12,7 +12,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
@@ -29,7 +29,7 @@ public class XmlToPostgressAndLucene {
 		File file = new File(Settings.getInstance().getDump_location());
 		System.out.println("start unmarshelling");
 
-		StandardAnalyzer analyzer = new StandardAnalyzer();
+		EnglishAnalyzer analyzer = new EnglishAnalyzer();
 		Directory index = FSDirectory.open(Paths.get("./index"));
 
 		IndexWriterConfig config = new IndexWriterConfig(analyzer);
