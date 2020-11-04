@@ -49,8 +49,8 @@ public class LuceneSaxHandler extends DefaultHandler {
 
 				}
 				String tags = attributes.getValue("Tags");
-				if (tags != null){
-					tags = tags.substring(1, tags.length()-1);
+				if (tags != null) {
+					tags = tags.substring(1, tags.length() - 1);
 					tags = tags.replaceAll("><", " ");
 				}
 				addDoc(id, title, body, tags, score, answer);
@@ -76,21 +76,24 @@ public class LuceneSaxHandler extends DefaultHandler {
 
 	}
 
-	private void addDoc(String id, String title, String body, String tags, int score, boolean answer) throws IOException {
-		Document doc = new Document();
-		doc.add(new IntPoint("id", Integer.parseInt(id)));
-		doc.add(new TextField("id", id, Field.Store.YES));
-		doc.add(new SortedDocValuesField("id", new BytesRef(id)));
-		if (title != null)
-			doc.add(new TextField("title", title, Field.Store.YES));
-		doc.add(new TextField("body", body, Field.Store.YES));
+	private void addDoc(String id, String title, String body, String tags, int score, boolean answer)
+			throws IOException {
+		if (id != null) {
+			Document doc = new Document();
+			doc.add(new IntPoint("id", Integer.parseInt(id)));
+			doc.add(new TextField("id", id, Field.Store.YES));
+			doc.add(new SortedDocValuesField("id", new BytesRef(id)));
+			if (title != null)
+				doc.add(new TextField("title", title, Field.Store.YES));
+			doc.add(new TextField("body", body, Field.Store.YES));
 //		doc.add(new IntPoint("score", score));
-		doc.add(new NumericDocValuesField("score", score));
-		doc.add(new StoredField("answer", Boolean.toString(answer)));
-		if (tags != null) {
-			doc.add(new TextField("tags", tags, Field.Store.YES));
+			doc.add(new NumericDocValuesField("score", score));
+			doc.add(new StoredField("answer", Boolean.toString(answer)));
+			if (tags != null) {
+				doc.add(new TextField("tags", tags, Field.Store.YES));
+			}
+			writer.addDocument(doc);
 		}
-		writer.addDocument(doc);
 	}
 
 }
