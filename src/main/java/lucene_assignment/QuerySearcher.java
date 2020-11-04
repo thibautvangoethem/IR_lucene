@@ -44,6 +44,7 @@ public class QuerySearcher {
 		System.out.println(query);
 		Query qTitle = new QueryParser("title", analyzer).parse(query);
 		Query qBody = new QueryParser("body", analyzer).parse(query);
+		Query qTags = new QueryParser("tags", analyzer).parse(query);
  		BoostQuery boostedTitle = new BoostQuery(qTitle, 2);
  		
  		IndexReader reader = DirectoryReader.open(index);
@@ -52,6 +53,7 @@ public class QuerySearcher {
 		BooleanQuery.Builder queryBuilder = new BooleanQuery.Builder();
 		queryBuilder.add(boostedTitle, Occur.SHOULD);
 		queryBuilder.add(qBody, Occur.SHOULD);
+		queryBuilder.add(qTags, Occur.SHOULD);
 		BooleanQuery q = queryBuilder.build();
 		DoubleValuesSource valueSource= DoubleValuesSource.fromIntField("score");
 		FunctionScoreQuery scoreQuery=new FunctionScoreQuery(q, valueSource);
