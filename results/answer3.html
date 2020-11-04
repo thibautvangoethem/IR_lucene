@@ -1,1 +1,64 @@
-<h1>Difference between Math.Floor() and Math.Truncate()</h1><p>What is the difference between <a href="http://msdn.microsoft.com/en-us/library/9a6a2sxy.aspx" rel="noreferrer"><code>Math.Floor()</code></a> and <a href="http://msdn.microsoft.com/en-us/library/system.math.truncate.aspx" rel="noreferrer"><code>Math.Truncate()</code></a> in .NET?</p>
+<head>
+<style>
+td, th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+}
+</style>
+</head><h1>How do you sort a dictionary by value?</h1><p>I often have to sort a dictionary, consisting of keys &amp; values, by value. For example, I have a hash of words and respective frequencies, that I want to order by frequency.</p>
+
+<p>There is a <code>SortedList</code> which is good for a single value (say frequency), that I want to map it back to the word.</p>
+
+<p><a href="http://msdn.microsoft.com/en-us/library/f7fta44c.aspx" rel="noreferrer">SortedDictionary</a> orders by key, not value. Some resort to a <a href="http://www.codeproject.com/KB/recipes/lookupcollection.aspx" rel="noreferrer">custom class</a>, but is there a cleaner way?</p>
+<table> <tr><th>answers</th></tr><tr><td><p>Looking around, and using some C# 3.0 features we can do this:</p>
+
+<pre><code>foreach (KeyValuePair&lt;string,int&gt; item in keywordCounts.OrderBy(key=&gt; key.Value))
+{ 
+    // do something with item.Key and item.Value
+}
+</code></pre>
+
+<p>This is the cleanest way I've seen and is similar to the Ruby way of handling hashes.</p>
+</tr></td><tr><td><p>On a high level, you have no other choice than to walk through the whole Dictionary and look at each value.</p>
+
+<p>Maybe this helps:
+<a href="http://bytes.com/forum/thread563638.html" rel="nofollow noreferrer">http://bytes.com/forum/thread563638.html</a>
+Copy/Pasting from John Timney:</p>
+
+<pre class="lang-cs prettyprint-override"><code>Dictionary&lt;string, string&gt; s = new Dictionary&lt;string, string&gt;();
+s.Add("1", "a Item");
+s.Add("2", "c Item");
+s.Add("3", "b Item");
+
+List&lt;KeyValuePair&lt;string, string&gt;&gt; myList = new List&lt;KeyValuePair&lt;string, string&gt;&gt;(s);
+myList.Sort(
+    delegate(KeyValuePair&lt;string, string&gt; firstPair,
+    KeyValuePair&lt;string, string&gt; nextPair)
+    {
+        return firstPair.Value.CompareTo(nextPair.Value);
+    }
+);
+</code></pre>
+</tr></td><tr><td><p>Use:</p>
+
+<pre><code>using System.Linq.Enumerable;
+...
+List&lt;KeyValuePair&lt;string, string&gt;&gt; myList = aDictionary.ToList();
+
+myList.Sort(
+    delegate(KeyValuePair&lt;string, string&gt; pair1,
+    KeyValuePair&lt;string, string&gt; pair2)
+    {
+        return pair1.Value.CompareTo(pair2.Value);
+    }
+);
+</code></pre>
+
+<p>Since you're targeting .NET 2.0 or above, you can simplify this into lambda syntax -- it's equivalent, but shorter. If you're targeting .NET 2.0 you can only use this syntax if you're using the compiler from Visual&nbsp;Studio&nbsp;2008 (or above).</p>
+
+<pre><code>var myList = aDictionary.ToList();
+
+myList.Sort((pair1,pair2) =&gt; pair1.Value.CompareTo(pair2.Value));
+</code></pre>
+</tr></td>

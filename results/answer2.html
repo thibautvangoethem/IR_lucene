@@ -1,7 +1,81 @@
-<h1>Calculate relative time in C#</h1><p>Given a specific <code>DateTime</code> value, how do I display relative time, like:</p>
+<head>
+<style>
+td, th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+}
+</style>
+</head><h1>Calculate relative time in C#</h1><p>Given a specific <code>DateTime</code> value, how do I display relative time, like:</p>
 
 <ul>
 <li>2 hours ago</li>
 <li>3 days ago</li>
 <li>a month ago</li>
 </ul>
+<table> <tr><th>answers</th></tr><tr><td><p>Here's how I do it</p>
+
+<pre class="lang-csharp prettyprint-override"><code>var ts = new TimeSpan(DateTime.UtcNow.Ticks - dt.Ticks);
+double delta = Math.Abs(ts.TotalSeconds);
+
+if (delta &lt; 60)
+{
+  return ts.Seconds == 1 ? "one second ago" : ts.Seconds + " seconds ago";
+}
+if (delta &lt; 60 * 2)
+{
+  return "a minute ago";
+}
+if (delta &lt; 45 * 60)
+{
+  return ts.Minutes + " minutes ago";
+}
+if (delta &lt; 90 * 60)
+{
+  return "an hour ago";
+}
+if (delta &lt; 24 * 60 * 60)
+{
+  return ts.Hours + " hours ago";
+}
+if (delta &lt; 48 * 60 * 60)
+{
+  return "yesterday";
+}
+if (delta &lt; 30 * 24 * 60 * 60)
+{
+  return ts.Days + " days ago";
+}
+if (delta &lt; 12 * 30 * 24 * 60 * 60)
+{
+  int months = Convert.ToInt32(Math.Floor((double)ts.Days / 30));
+  return months &lt;= 1 ? "one month ago" : months + " months ago";
+}
+int years = Convert.ToInt32(Math.Floor((double)ts.Days / 365));
+return years &lt;= 1 ? "one year ago" : years + " years ago";
+</code></pre>
+
+<p>Suggestions? Comments? Ways to improve this algorithm?</p>
+</tr></td><tr><td><p>@jeff</p>
+<p>IMHO yours seems a little long. However it does seem a little more robust with support for &quot;yesterday&quot; and &quot;years&quot;.  But in my experience when this is used, the person is most likely to view the content in the first 30 days. It is only the really hardcore people that come after that. So, I usually elect to keep this short and simple.</p>
+<p>This is the method I am currently using in one of my websites. This returns only a relative day, hour and time.  And then the user has to slap on &quot;ago&quot; in the output.</p>
+<pre><code>public static string ToLongString(this TimeSpan time)
+{
+    string output = String.Empty;
+
+    if (time.Days &gt; 0)
+        output += time.Days + &quot; days &quot;;
+
+    if ((time.Days == 0 || time.Days == 1) &amp;&amp; time.Hours &gt; 0)
+        output += time.Hours + &quot; hr &quot;;
+
+    if (time.Days == 0 &amp;&amp; time.Minutes &gt; 0)
+        output += time.Minutes + &quot; min &quot;;
+
+    if (output.Length == 0)
+        output += time.Seconds + &quot; sec&quot;;
+
+    return output.Trim();
+}
+</code></pre>
+</tr></td>

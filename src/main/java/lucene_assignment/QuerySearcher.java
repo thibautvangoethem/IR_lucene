@@ -65,12 +65,10 @@ public class QuerySearcher {
 		
 		Map<Document, List<Document>> resultMap=new LinkedHashMap<>();
 		for (GroupDocs<BytesRef> group : test) {
-			System.out.println(group.totalHits);
 		    for (ScoreDoc scoredoc : group.scoreDocs) {
 		        Document doc = searcher.doc(scoredoc.doc);
 		        String id=doc.get("id");
 		        getDocumentForId(analyzer, searcher, id,resultMap);
-		        
 		    }
 		}
 		
@@ -94,8 +92,6 @@ public class QuerySearcher {
 		for (int i = 0; i < hits.length; ++i) {
 			int docId = hits[i].doc;
 			Document d = searcher.doc(docId);
-			System.out.println((i + 1) + ". " + d.get("id"));
-			System.out.println((i + 1) + ". " + d.get("title"));
 			if(d.get("answer").equals("true")) {
 				results.add(d);
 			}else {

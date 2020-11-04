@@ -1,47 +1,103 @@
-<h1>How to use the C socket API in C++ on z/OS</h1><p>I'm having issues getting the C sockets API to work properly in <code>C++</code> on <code>z/OS</code>.</p>
+<head>
+<style>
+td, th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+}
+</style>
+</head><h1>What is the fastest way to get the value of ??</h1><p>I'm looking for the fastest way to obtain the value of ?, as a personal challenge. More specifically, I'm using ways that don't involve using <code>#define</code> constants like <code>M_PI</code>, or hard-coding the number in.</p>
 
-<p>Although I am including <code>sys/socket.h</code>, I still get <strong>compile time errors</strong> telling me that <strong><code>AF_INET</code> is not defined</strong>.</p>
+<p>The program below tests the various ways I know of. The inline assembly version is, in theory, the fastest option, though clearly not portable. I've included it as a baseline to compare against the other versions. In my tests, with built-ins, the <code>4 * atan(1)</code> version is fastest on GCC 4.2, because it auto-folds the <code>atan(1)</code> into a constant. With <code>-fno-builtin</code> specified, the <code>atan2(0, -1)</code> version is fastest.</p>
 
-<p>Am I missing something obvious, or is this related to the fact that being on <code>z/OS</code> makes my problems much more complicated?</p>
+<p>Here's the main testing program (<code>pitimes.c</code>):</p>
 
-<hr>
+<pre class="lang-c prettyprint-override"><code>#include &lt;math.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
 
-<p><strong>Update</strong> : Upon further investigation, I discovered that there is an <code>#ifdef</code> that I'm hitting. Apparently <code>z/OS</code> isn't happy unless I define which "type" of sockets I'm using with:</p>
+#define ITERS 10000000
+#define TESTWITH(x) {                                                       \
+    diff = 0.0;                                                             \
+    time1 = clock();                                                        \
+    for (i = 0; i &lt; ITERS; ++i)                                             \
+        diff += (x) - M_PI;                                                 \
+    time2 = clock();                                                        \
+    printf("%s\t=&gt; %e, time =&gt; %f\n", #x, diff, diffclock(time2, time1));   \
+}
 
-<pre><code>#define _OE_SOCKETS
-</code></pre>
-
-<p>Now, I personally have no idea what this <code>_OE_SOCKETS</code> is actually for, so if any <code>z/OS</code> sockets programmers are out there (all 3 of you), perhaps you could give me a rundown of how this all works?</p>
-
-<hr>
-
-<p><strong>Test App</strong></p>
-
-<pre><code>#include &lt;sys/socket.h&gt;
-
-int main()
+static inline double
+diffclock(clock_t time1, clock_t time0)
 {
-    return AF_INET;
+    return (double) (time1 - time0) / CLOCKS_PER_SEC;
+}
+
+int
+main()
+{
+    int i;
+    clock_t time1, time2;
+    double diff;
+
+    /* Warmup. The atan2 case catches GCC's atan folding (which would
+     * optimise the ``4 * atan(1) - M_PI'' to a no-op), if -fno-builtin
+     * is not used. */
+    TESTWITH(4 * atan(1))
+    TESTWITH(4 * atan2(1, 1))
+
+#if defined(__GNUC__) &amp;&amp; (defined(__i386__) || defined(__amd64__))
+    extern double fldpi();
+    TESTWITH(fldpi())
+#endif
+
+    /* Actual tests start here. */
+    TESTWITH(atan2(0, -1))
+    TESTWITH(acos(-1))
+    TESTWITH(2 * asin(1))
+    TESTWITH(4 * atan2(1, 1))
+    TESTWITH(4 * atan(1))
+
+    return 0;
 }
 </code></pre>
 
-<p><strong>Compile/Link Output:</strong></p>
+<p>And the inline assembly stuff (<code>fldpi.c</code>) that will only work for x86 and x64 systems:</p>
 
-<pre><code>cxx -Wc,xplink -Wl,xplink -o inet_test inet.C
-
-"./inet.C", line 5.16: CCN5274 (S) The name lookup for "AF_INET" did not find a declaration.
-CCN0797(I) Compilation failed for file ./inet.C. Object file not created.
+<pre class="lang-c prettyprint-override"><code>double
+fldpi()
+{
+    double pi;
+    asm("fldpi" : "=t" (pi));
+    return pi;
+}
 </code></pre>
 
-<hr>
+<p>And a build script that builds all the configurations I'm testing (<code>build.sh</code>):</p>
 
-<p>A check of sys/sockets.h does include the definition I need, and as far as I can tell, it is not being blocked by any <code>#ifdef</code> statements.</p>
+<pre><code>#!/bin/sh
+gcc -O3 -Wall -c           -m32 -o fldpi-32.o fldpi.c
+gcc -O3 -Wall -c           -m64 -o fldpi-64.o fldpi.c
 
-<p>I have however noticed it contains the following:</p>
-
-<pre><code>#ifdef __cplusplus
-  extern "C" {
-#endif
+gcc -O3 -Wall -ffast-math  -m32 -o pitimes1-32 pitimes.c fldpi-32.o
+gcc -O3 -Wall              -m32 -o pitimes2-32 pitimes.c fldpi-32.o -lm
+gcc -O3 -Wall -fno-builtin -m32 -o pitimes3-32 pitimes.c fldpi-32.o -lm
+gcc -O3 -Wall -ffast-math  -m64 -o pitimes1-64 pitimes.c fldpi-64.o -lm
+gcc -O3 -Wall              -m64 -o pitimes2-64 pitimes.c fldpi-64.o -lm
+gcc -O3 -Wall -fno-builtin -m64 -o pitimes3-64 pitimes.c fldpi-64.o -lm
 </code></pre>
 
-<p>which encapsulates basically the whole file? Not sure if it matters.</p>
+<p>Apart from testing between various compiler flags (I've compared 32-bit against 64-bit too because the optimizations are different), I've also tried switching the order of the tests around. But still, the <code>atan2(0, -1)</code> version still comes out on top every time.</p>
+<table> <tr><th>answers</th></tr><tr><td><p>Here's a general description of a technique for calculating pi that I learnt in high school.</p>
+
+<p>I only share this because I think it is simple enough that anyone can remember it, indefinitely, plus it teaches you the concept of "Monte-Carlo" methods -- which are statistical methods of arriving at answers that don't immediately appear to be deducible through random processes.</p>
+
+<p>Draw a square, and inscribe a quadrant (one quarter of a semi-circle) inside that square (a quadrant with radius equal to the side of the square, so it fills as much of the square as possible)</p>
+
+<p>Now throw a dart at the square, and record where it lands -- that is, choose a random point anywhere inside the square. Of course, it landed inside the square, but is it inside the semi-circle? Record this fact.</p>
+
+<p>Repeat this process many times -- and you will find there is a ratio of the number of points inside the semi-circle versus the total number thrown, call this ratio x.</p>
+
+<p>Since the area of the square is r times r, you can deduce that the area of the semi circle is x times r times r (that is, x times r squared). Hence x times 4 will give you pi. </p>
+
+<p>This is not a quick method to use. But it's a nice example of a Monte Carlo method. And if you look around, you may find that many problems otherwise outside your computational skills can be solved by such methods.</p>
+</tr></td>

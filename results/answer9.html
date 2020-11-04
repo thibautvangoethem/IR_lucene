@@ -1,14 +1,34 @@
-<h1>Adding scripting functionality to .NET applications</h1><p>I have a little game written in C#. It uses a database as back-end. It's 
-a <a href="http://en.wikipedia.org/wiki/Collectible_card_game" rel="nofollow noreferrer">trading card game</a>, and I wanted to implement the function of the cards as a script.</p>
+<head>
+<style>
+td, th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+}
+</style>
+</head><h1>Filling a DataSet or DataTable from a LINQ query result set</h1><p>How do you expose a LINQ query as an ASMX web service? Usually, from the business tier, I can return a typed <code>DataSet</code> or <code>DataTable</code> which can be serialized for transport over ASMX.</p>
 
-<p>What I mean is that I essentially have an interface, <code>ICard</code>, which a card class implements (<code>public class Card056: ICard</code>) and which contains a function that is called by the game.</p>
+<p>How can I do the same for a LINQ query? Is there a way to populate a typed <code>DataSet</code> or <code>DataTable</code> via a LINQ query?</p>
 
-<p>Now, to make the thing maintainable/moddable, I would like to have the class for each card as source code in the database and essentially compile it on first use. So when I have to add/change a card, I'll just add it to the database and tell my application to refresh, without needing any assembly deployment (especially since we would be talking about 1 assembly per card which means hundreds of assemblies).</p>
+<pre><code>public static MyDataTable CallMySproc()
+{
+    string conn = "...";
 
-<p>Is that possible? Register a class from a source file and then instantiate it, etc.</p>
+    MyDatabaseDataContext db = new MyDatabaseDataContext(conn);
+    MyDataTable dt = new MyDataTable();
 
-<pre><code>ICard Cards[current] = new MyGame.CardLibrary.Card056();
-Cards[current].OnEnterPlay(ref currentGameState);
+    // execute a sproc via LINQ
+    var query = from dr
+                in db.MySproc().AsEnumerable
+                select dr;
+
+    // copy LINQ query resultset into a DataTable -this does not work !    
+    dt = query.CopyToDataTable();
+
+    return dt;
+}
 </code></pre>
 
-<p>The language is C# but extra bonus if it's possible to write the script in any .NET language.</p>
+<p>How can I get the result set of a LINQ query into a <code>DataSet</code> or <code>DataTable</code>? Alternatively, is the LINQ query serializable so that I can expose it as an ASMX web service?</p>
+<table> <tr><th>answers</th></tr><tr><td><p>If you use a return type of <code>IEnumerable</code>, you can return your <strong>query</strong> variable directly.</p>
+</tr></td>

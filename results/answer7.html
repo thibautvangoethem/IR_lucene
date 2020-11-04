@@ -1,27 +1,77 @@
-<h1>Check for changes to an SQL Server table?</h1><p>How can I monitor an SQL Server database for changes to a table without using triggers or modifying the structure of the database in any way? My preferred programming environment is <a href="http://en.wikipedia.org/wiki/.NET_Framework" rel="noreferrer">.NET</a> and C#.</p>
+<head>
+<style>
+td, th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+}
+</style>
+</head><h1>How to use the C socket API in C++ on z/OS</h1><p>I'm having issues getting the C sockets API to work properly in <code>C++</code> on <code>z/OS</code>.</p>
 
-<p>I'd like to be able to support any <a href="http://en.wikipedia.org/wiki/Microsoft_SQL_Server#Genesis" rel="noreferrer">SQL Server 2000</a> SP4 or newer. My application is a bolt-on data visualization for another company's product. Our customer base is in the thousands, so I don't want to have to put in requirements that we modify the third-party vendor's table at every installation.</p>
+<p>Although I am including <code>sys/socket.h</code>, I still get <strong>compile time errors</strong> telling me that <strong><code>AF_INET</code> is not defined</strong>.</p>
 
-<p>By <em>"changes to a table"</em> I mean changes to table data, not changes to table structure.</p>
-
-<p>Ultimately, I would like the change to trigger an event in my application, instead of having to check for changes at an interval.</p>
+<p>Am I missing something obvious, or is this related to the fact that being on <code>z/OS</code> makes my problems much more complicated?</p>
 
 <hr>
 
-<p>The best course of action given my requirements (no triggers or schema modification, SQL Server 2000 and 2005) seems to be to use the <code>BINARY_CHECKSUM</code> function in <a href="http://en.wikipedia.org/wiki/Transact-SQL" rel="noreferrer">T-SQL</a>. The way I plan to implement is this:</p>
+<p><strong>Update</strong> : Upon further investigation, I discovered that there is an <code>#ifdef</code> that I'm hitting. Apparently <code>z/OS</code> isn't happy unless I define which "type" of sockets I'm using with:</p>
 
-<p>Every X seconds run the following query:</p>
-
-<pre><code>SELECT CHECKSUM_AGG(BINARY_CHECKSUM(*))
-FROM sample_table
-WITH (NOLOCK);
+<pre><code>#define _OE_SOCKETS
 </code></pre>
 
-<p>And compare that against the stored value. If the value has changed, go through the table row by row using the query:</p>
+<p>Now, I personally have no idea what this <code>_OE_SOCKETS</code> is actually for, so if any <code>z/OS</code> sockets programmers are out there (all 3 of you), perhaps you could give me a rundown of how this all works?</p>
 
-<pre><code>SELECT row_id, BINARY_CHECKSUM(*)
-FROM sample_table
-WITH (NOLOCK);
+<hr>
+
+<p><strong>Test App</strong></p>
+
+<pre><code>#include &lt;sys/socket.h&gt;
+
+int main()
+{
+    return AF_INET;
+}
 </code></pre>
 
-<p>And compare the returned checksums against stored values.</p>
+<p><strong>Compile/Link Output:</strong></p>
+
+<pre><code>cxx -Wc,xplink -Wl,xplink -o inet_test inet.C
+
+"./inet.C", line 5.16: CCN5274 (S) The name lookup for "AF_INET" did not find a declaration.
+CCN0797(I) Compilation failed for file ./inet.C. Object file not created.
+</code></pre>
+
+<hr>
+
+<p>A check of sys/sockets.h does include the definition I need, and as far as I can tell, it is not being blocked by any <code>#ifdef</code> statements.</p>
+
+<p>I have however noticed it contains the following:</p>
+
+<pre><code>#ifdef __cplusplus
+  extern "C" {
+#endif
+</code></pre>
+
+<p>which encapsulates basically the whole file? Not sure if it matters.</p>
+<table> <tr><th>answers</th></tr><tr><td><p>I've had no trouble using the BSD sockets API in C++, in GNU/Linux. Here's the sample program I used:</p>
+
+<pre><code>#include &lt;sys/socket.h&gt;
+
+int
+main()
+{
+    return AF_INET;
+}
+</code></pre>
+
+<p>So my take on this is that z/OS is probably the complicating factor here, however, because I've never used z/OS before, much less programmed in it, I can't say this definitively. :-P</p>
+</tr></td><tr><td><p>@Jax: The <code>extern "C"</code> thing matters, very very much. If a header file doesn't have one, then (unless it's a C++-only header file), you would have to enclose your <code>#include</code> with it:</p>
+
+<pre><code>extern "C" {
+#include &lt;sys/socket.h&gt;
+// include other similarly non-compliant header files
+}
+</code></pre>
+
+<p>Basically, anytime where a C++ program wants to link to C-based facilities, the <code>extern "C"</code> is vital. In practical terms, it means that the names used in external references will not be mangled, like normal C++ names would. <a href="http://www.parashift.com/c++-faq-lite/mixing-c-and-cpp.html" rel="noreferrer">Reference.</a></p>
+</tr></td>

@@ -1,1 +1,30 @@
-<h1>In C#, how do I calculate someone's age based on a DateTime type birthday?</h1><p>A given <code>DateTime</code> Type representing a person's birthday, how do I calculate their age in years?</p>
+<head>
+<style>
+td, th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+}
+</style>
+</head><h1>In C#, how do I calculate someone's age based on a DateTime type birthday?</h1><p>A given <code>DateTime</code> Type representing a person's birthday, how do I calculate their age in years?</p>
+<table> <tr><th>answers</th></tr><tr><td><p>The best way that I know of because of leap years and everything is:</p>
+
+<pre class="lang-cs prettyprint-override"><code>DateTime birthDate = new DateTime(2000,3,1);
+int age = (int)Math.Floor((DateTime.Now - birthDate).TotalDays / 365.25D);
+</code></pre>
+</tr></td><tr><td><p>Another function, not by me but found on the web and refined it a bit:</p>
+
+<pre><code>public static int GetAge(DateTime birthDate)
+{
+    DateTime n = DateTime.Now; // To avoid a race condition around midnight
+    int age = n.Year - birthDate.Year;
+
+    if (n.Month &lt; birthDate.Month || (n.Month == birthDate.Month &amp;&amp; n.Day &lt; birthDate.Day))
+        age--;
+
+    return age;
+}
+</code></pre>
+
+<p>Just two things that come into my mind: What about people from countries that do not use the Gregorian calendar? DateTime.Now is in the server-specific culture I think. I have absolutely zero knowledge about actually working with Asian calendars and I do not know if there is an easy way to convert dates between calendars, but just in case you're wondering about those Chinese guys from the year 4660 :-)</p>
+</tr></td>

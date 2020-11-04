@@ -1,5 +1,15 @@
-<h1>How do you sort a dictionary by value?</h1><p>I often have to sort a dictionary, consisting of keys &amp; values, by value. For example, I have a hash of words and respective frequencies, that I want to order by frequency.</p>
+<head>
+<style>
+td, th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+}
+</style>
+</head><h1>Difference between Math.Floor() and Math.Truncate()</h1><p>What is the difference between <a href="http://msdn.microsoft.com/en-us/library/9a6a2sxy.aspx" rel="noreferrer"><code>Math.Floor()</code></a> and <a href="http://msdn.microsoft.com/en-us/library/system.math.truncate.aspx" rel="noreferrer"><code>Math.Truncate()</code></a> in .NET?</p>
+<table> <tr><th>answers</th></tr><tr><td><p><code>Math.Floor</code> rounds down, <code>Math.Ceiling</code> rounds up, and <code>Math.Truncate</code> rounds towards zero. Thus, <code>Math.Truncate</code> is like <code>Math.Floor</code> for positive numbers, and like <code>Math.Ceiling</code> for negative numbers. Here's the <a href="http://msdn.microsoft.com/en-us/library/system.math.truncate.aspx" rel="noreferrer">reference</a>.</p>
 
-<p>There is a <code>SortedList</code> which is good for a single value (say frequency), that I want to map it back to the word.</p>
+<p>For completeness, <code>Math.Round</code> rounds to the nearest integer. If the number is exactly midway between two integers, then it rounds towards the even one. <a href="http://msdn.microsoft.com/en-us/library/system.math.round.aspx" rel="noreferrer">Reference.</a></p>
 
-<p><a href="http://msdn.microsoft.com/en-us/library/f7fta44c.aspx" rel="noreferrer">SortedDictionary</a> orders by key, not value. Some resort to a <a href="http://www.codeproject.com/KB/recipes/lookupcollection.aspx" rel="noreferrer">custom class</a>, but is there a cleaner way?</p>
+<p>See also: <a href="https://stackoverflow.com/questions/14/whats-the-difference-between-math-floor-and-math-truncate-in-c/580252#580252">Pax Diablo's answer</a>. Highly recommended!</p>
+</tr></td>

@@ -1,81 +1,32 @@
-<h1>What is the fastest way to get the value of ??</h1><p>I'm looking for the fastest way to obtain the value of ?, as a personal challenge. More specifically, I'm using ways that don't involve using <code>#define</code> constants like <code>M_PI</code>, or hard-coding the number in.</p>
-
-<p>The program below tests the various ways I know of. The inline assembly version is, in theory, the fastest option, though clearly not portable. I've included it as a baseline to compare against the other versions. In my tests, with built-ins, the <code>4 * atan(1)</code> version is fastest on GCC 4.2, because it auto-folds the <code>atan(1)</code> into a constant. With <code>-fno-builtin</code> specified, the <code>atan2(0, -1)</code> version is fastest.</p>
-
-<p>Here's the main testing program (<code>pitimes.c</code>):</p>
-
-<pre class="lang-c prettyprint-override"><code>#include &lt;math.h&gt;
-#include &lt;stdio.h&gt;
-#include &lt;time.h&gt;
-
-#define ITERS 10000000
-#define TESTWITH(x) {                                                       \
-    diff = 0.0;                                                             \
-    time1 = clock();                                                        \
-    for (i = 0; i &lt; ITERS; ++i)                                             \
-        diff += (x) - M_PI;                                                 \
-    time2 = clock();                                                        \
-    printf("%s\t=&gt; %e, time =&gt; %f\n", #x, diff, diffclock(time2, time1));   \
+<head>
+<style>
+td, th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
 }
+</style>
+</head><h1>Convert Decimal to Double</h1><p>I want to use a <code>Track-Bar</code> to change a <code>Form</code>'s opacity.</p>
+<p>This is my code:</p>
+<pre class="lang-cs prettyprint-override"><code>decimal trans = trackBar1.Value / 5000;
+this.Opacity = trans;
+</code></pre>
+<p>When I build the application, it gives the following error:</p>
+<blockquote>
+<p>Cannot implicitly convert type <code>decimal</code> to <code>double</code></p>
+</blockquote>
+<p>I have tried using <code>trans</code> and <code>double</code> but then the <code>Control</code> doesn't work. This code worked fine in a past VB.NET project.</p>
+<table> <tr><th>answers</th></tr><tr><td><p>An explicit cast to <code>double</code> like this isn't necessary:</p>
 
-static inline double
-diffclock(clock_t time1, clock_t time0)
-{
-    return (double) (time1 - time0) / CLOCKS_PER_SEC;
-}
-
-int
-main()
-{
-    int i;
-    clock_t time1, time2;
-    double diff;
-
-    /* Warmup. The atan2 case catches GCC's atan folding (which would
-     * optimise the ``4 * atan(1) - M_PI'' to a no-op), if -fno-builtin
-     * is not used. */
-    TESTWITH(4 * atan(1))
-    TESTWITH(4 * atan2(1, 1))
-
-#if defined(__GNUC__) &amp;&amp; (defined(__i386__) || defined(__amd64__))
-    extern double fldpi();
-    TESTWITH(fldpi())
-#endif
-
-    /* Actual tests start here. */
-    TESTWITH(atan2(0, -1))
-    TESTWITH(acos(-1))
-    TESTWITH(2 * asin(1))
-    TESTWITH(4 * atan2(1, 1))
-    TESTWITH(4 * atan(1))
-
-    return 0;
-}
+<pre><code>double trans = (double) trackBar1.Value / 5000.0;
 </code></pre>
 
-<p>And the inline assembly stuff (<code>fldpi.c</code>) that will only work for x86 and x64 systems:</p>
+<p>Identifying the constant as <code>5000.0</code> (or as <code>5000d</code>) is sufficient:</p>
 
-<pre class="lang-c prettyprint-override"><code>double
-fldpi()
-{
-    double pi;
-    asm("fldpi" : "=t" (pi));
-    return pi;
-}
+<pre><code>double trans = trackBar1.Value / 5000.0;
+double trans = trackBar1.Value / 5000d;
 </code></pre>
-
-<p>And a build script that builds all the configurations I'm testing (<code>build.sh</code>):</p>
-
-<pre><code>#!/bin/sh
-gcc -O3 -Wall -c           -m32 -o fldpi-32.o fldpi.c
-gcc -O3 -Wall -c           -m64 -o fldpi-64.o fldpi.c
-
-gcc -O3 -Wall -ffast-math  -m32 -o pitimes1-32 pitimes.c fldpi-32.o
-gcc -O3 -Wall              -m32 -o pitimes2-32 pitimes.c fldpi-32.o -lm
-gcc -O3 -Wall -fno-builtin -m32 -o pitimes3-32 pitimes.c fldpi-32.o -lm
-gcc -O3 -Wall -ffast-math  -m64 -o pitimes1-64 pitimes.c fldpi-64.o -lm
-gcc -O3 -Wall              -m64 -o pitimes2-64 pitimes.c fldpi-64.o -lm
-gcc -O3 -Wall -fno-builtin -m64 -o pitimes3-64 pitimes.c fldpi-64.o -lm
-</code></pre>
-
-<p>Apart from testing between various compiler flags (I've compared 32-bit against 64-bit too because the optimizations are different), I've also tried switching the order of the tests around. But still, the <code>atan2(0, -1)</code> version still comes out on top every time.</p>
+</tr></td><tr><td><p>It sounds like <code>this.Opacity</code> is a double value, and the compiler doesn't like you trying to cram a decimal value into it.</p>
+</tr></td><tr><td><p><strong>A more generic answer for the generic question &quot;Decimal vs Double?&quot;:</strong></p>
+<p><strong>Decimal</strong> is for monetary calculations to preserve the precision. <strong>Double</strong> is for scientific calculations that do not get affected by small differences. Since Double is a type which is native to the CPU (internal representation is stored in <em>base 2</em>), calculations made with Double perform better then Decimal (which is represented in <em>base 10</em> internally).</p>
+</tr></td>

@@ -12,22 +12,40 @@ import com.sun.javadoc.Doc;
 
 public class ResultsToHtmlPage {
 
-	public static void toHtml(String originalquery,Map<Document, List<Document>> results) {
+	public static void toHtml(String originalquery, Map<Document, List<Document>> results) {
 		try {
 			FileWriter index = createFile("results/index.html");
-			index.write("<h3>Found " + results.size()+ " hit(s) for query: "+originalquery+"</h3>");
-			int docIndex=1;
-			for (Document doc:results.keySet()) {
-				String title=doc.get("title");
-				String body=doc.get("body");
-				String filename = "answer"+Integer.toString(docIndex)+".html";
-				FileWriter answerWriter= createFile("results/"+filename);
-				answerWriter.write("<h1>"+title+"</h1>");
+			index.write("<h3>Found " + results.size() + " hit(s) for query: " + originalquery + "</h3>");
+			int docIndex = 1;
+			for (Document doc : results.keySet()) {
+				String title = doc.get("title");
+				String body = doc.get("body");
+				String filename = "answer" + Integer.toString(docIndex) + ".html";
+				FileWriter answerWriter = createFile("results/" + filename);
+				answerWriter
+						.write("<head>\r\n"
+								+ "<style>\r\n"
+								+ "td, th {\r\n"
+								+ "  border: 1px solid #dddddd;\r\n"
+								+ "  text-align: left;\r\n"
+								+ "  padding: 8px;\r\n"
+								+ "}\r\n"
+								+ "</style>\r\n"
+								+ "</head>");
+				answerWriter.write("<h1>" + title + "</h1>");
 				answerWriter.write(body);
+				answerWriter.write("<table>");
+				answerWriter.write(" <tr><th>answers</th></tr>");
+				for (Document answer : results.get(doc)) {
+					answerWriter.write("<tr><td>");
+					answerWriter.write(answer.get("body"));
+					answerWriter.write("</tr></td>");
+				}
+
 				answerWriter.close();
-				
-				index.write(Integer.toString(docIndex)+":"+"<a href="+filename+">"+title+"</a><br> ");
-				docIndex+=1;
+
+				index.write(Integer.toString(docIndex) + ":" + "<a href=" + filename + ">" + title + "</a><br> ");
+				docIndex += 1;
 			}
 			index.close();
 
@@ -44,8 +62,8 @@ public class ResultsToHtmlPage {
 		file.createNewFile();
 		return new FileWriter(name);
 	}
-	
-	private static List<String> getAnswers(String id){
+
+	private static List<String> getAnswers(String id) {
 		return null;
 	}
 }
