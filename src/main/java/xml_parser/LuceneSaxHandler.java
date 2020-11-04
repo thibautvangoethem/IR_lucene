@@ -1,16 +1,19 @@
 package xml_parser;
 
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.IntPoint;
+import org.apache.lucene.document.NumericDocValuesField;
+import org.apache.lucene.document.SortedDocValuesField;
+import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.util.BytesRef;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -32,19 +35,27 @@ public class LuceneSaxHandler extends DefaultHandler {
 		if (qName.equalsIgnoreCase("row")) {
 
 			try {
+
+				String title = attributes.getValue("Title");
+				String body = attributes.getValue("Body");
+				int score = Integer.parseInt(attributes.getValue("Score"));
+				boolean answer = true;
+				String id = "";
 				if (attributes.getValue("PostTypeId").equals("1")) {
-					String title = attributes.getValue("Title");
-					String body = attributes.getValue("Body");
-					if (title != null) {
-						addDoc(title, body);
-					}
-					counter++;
-					if (counter > 100000) {
-						counter = 0;
-						System.out.println("persisting 100000 rows");
-						long current = new Date().getTime();
-						System.out.println("it took " + Long.toString(current - startTime) + " ms");
-					}
+					id = attributes.getValue("Id");
+					answer = false;
+				} else {
+					id = attributes.getValue("ParentId");
+
+				}
+
+				addDoc(id, title, body, score, answer);
+				counter++;
+				if (counter > 100000) {
+					counter = 0;
+					System.out.println("persisting 100000 rows");
+					long current = new Date().getTime();
+					System.out.println("it took " + Long.toString(current - startTime) + " ms");
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -61,10 +72,17 @@ public class LuceneSaxHandler extends DefaultHandler {
 
 	}
 
-	private void addDoc(String title, String body) throws IOException {
+	private void addDoc(String id, String title, String body, int score, boolean answer) throws IOException {
 		Document doc = new Document();
-		doc.add(new TextField("title", title, Field.Store.YES));
+		doc.add(new IntPoint("id", Integer.parseInt(id)));
+		doc.add(new TextField("id", id, Field.Store.YES));
+		doc.add(new SortedDocValuesField("id", new BytesRef(id)));
+		if (title != null)
+			doc.add(new TextField("title", title, Field.Store.YES));
 		doc.add(new TextField("body", body, Field.Store.YES));
+//		doc.add(new IntPoint("score", score));
+		doc.add(new NumericDocValuesField("score", score));
+		doc.add(new StoredField("answer", Boolean.toString(answer)));
 		writer.addDocument(doc);
 	}
 
