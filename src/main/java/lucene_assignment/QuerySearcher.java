@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.document.Document;
@@ -57,52 +59,51 @@ public class QuerySearcher {
 		GroupingSearch gSearch=new GroupingSearch("id");
 		gSearch.setAllGroups(true);
 		TopGroups<BytesRef> gSearchDocuments = gSearch.search(searcher, scoreQuery, 0, 10);
-		
 		GroupDocs<BytesRef>[] test = gSearchDocuments.groups;
+		
+		Map<Document, List<Document>> resultMap=new LinkedHashMap<>();
 		for (GroupDocs<BytesRef> group : test) {
+			System.out.println(group.totalHits);
 		    for (ScoreDoc scoredoc : group.scoreDocs) {
 		        Document doc = searcher.doc(scoredoc.doc);
-		        System.out.println( ". " + doc.get("title"));
-		        System.out.println( ". " + doc.get("id"));
 		        String id=doc.get("id");
-		        Query qId = new QueryParser("id", analyzer).parse(id);
-		        BooleanQuery.Builder queryBuilder2 = new BooleanQuery.Builder();
-				queryBuilder.add(qId, Occur.MUST);
-				BooleanQuery q2 = queryBuilder.build();
-				TopDocs docs = searcher.search(q2, 10);
-				ScoreDoc[] hits = docs.scoreDocs;
-				List<Document> results=new ArrayList<>();
-				System.out.println("Found " + hits.length + " hits.");
-				for (int i = 0; i < hits.length; ++i) {
-					int docId = hits[i].doc;
-					Document d = searcher.doc(docId);
-//				    results.add(d);
-					System.out.println((i + 1) + ". " + d.get("id"));
-					System.out.println((i + 1) + ". " + d.get("title"));
-//				    System.out.println((i + 1) + ". " + d.get("body"));
-
-				}
+		        getDocumentForId(analyzer, searcher, id,resultMap);
+		        
 		    }
 		}
 		
 
-		int hitsPerPage = 10;
-		
-		TopDocs docs = searcher.search(q, hitsPerPage);
-		ScoreDoc[] hits = docs.scoreDocs;
-		
-		List<Document> results=new ArrayList<>();
-//		System.out.println("Found " + hits.length + " hits.");
-//		for(int i=0;i<hits.length;++i) {
-//		    int docId = hits[i].doc;
-//		    Document d = searcher.doc(docId);
-////		    results.add(d);
-//		    System.out.println((i + 1) + ". " + d.get("title"));
-////		    System.out.println((i + 1) + ". " + d.get("body"));
-//		    
-//		}
-		ResultsToHtmlPage.toHtml(results);
+		ResultsToHtmlPage.toHtml(input,resultMap);
 	      
+	}
+
+	private static void getDocumentForId(EnglishAnalyzer analyzer, IndexSearcher searcher, String id,Map<Document, List<Document>> result)
+			throws ParseException, IOException {
+		Document question=null;
+		
+		Query qId = new QueryParser("id", analyzer).parse(id);
+		
+		BooleanQuery.Builder queryBuilder = new BooleanQuery.Builder();
+		queryBuilder.add(qId, Occur.MUST);
+		BooleanQuery q = queryBuilder.build();
+		TopDocs docs = searcher.search(q, 10);
+		ScoreDoc[] hits = docs.scoreDocs;
+		List<Document> results=new ArrayList<>();
+		for (int i = 0; i < hits.length; ++i) {
+			int docId = hits[i].doc;
+			Document d = searcher.doc(docId);
+			System.out.println((i + 1) + ". " + d.get("id"));
+			System.out.println((i + 1) + ". " + d.get("title"));
+			if(d.get("answer").equals("true")) {
+				results.add(d);
+			}else {
+				question=d;
+			}
+		
+		}
+		if(!result.containsKey(question)) {
+			result.put(question, results);
+		}
 	}
 	
 	public static String escapeProhibitedLuceneCharacters(String query) {
