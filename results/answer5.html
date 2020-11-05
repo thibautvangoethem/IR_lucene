@@ -6,10 +6,2381 @@ td, th {
   padding: 8px;
 }
 </style>
-</head><h1>Difference between Math.Floor() and Math.Truncate()</h1><p>What is the difference between <a href="http://msdn.microsoft.com/en-us/library/9a6a2sxy.aspx" rel="noreferrer"><code>Math.Floor()</code></a> and <a href="http://msdn.microsoft.com/en-us/library/system.math.truncate.aspx" rel="noreferrer"><code>Math.Truncate()</code></a> in .NET?</p>
-<table> <tr><th>answers</th></tr><tr><td><p><code>Math.Floor</code> rounds down, <code>Math.Ceiling</code> rounds up, and <code>Math.Truncate</code> rounds towards zero. Thus, <code>Math.Truncate</code> is like <code>Math.Floor</code> for positive numbers, and like <code>Math.Ceiling</code> for negative numbers. Here's the <a href="http://msdn.microsoft.com/en-us/library/system.math.truncate.aspx" rel="noreferrer">reference</a>.</p>
+</head><h1>How can I get query string values in JavaScript?</h1><p>Is there a plugin-less way of retrieving <a href="http://en.wikipedia.org/wiki/Query_string" rel="nofollow noreferrer">query string</a> values via jQuery (or without)? </p>
 
-<p>For completeness, <code>Math.Round</code> rounds to the nearest integer. If the number is exactly midway between two integers, then it rounds towards the even one. <a href="http://msdn.microsoft.com/en-us/library/system.math.round.aspx" rel="noreferrer">Reference.</a></p>
+<p>If so, how? If not, is there a plugin which can do so?</p>
+<table> <tr><th>answers</th></tr><tr><td><p>Try this:</p>
 
-<p>See also: <a href="https://stackoverflow.com/questions/14/whats-the-difference-between-math-floor-and-math-truncate-in-c/580252#580252">Pax Diablo's answer</a>. Highly recommended!</p>
+<pre><code>String.prototype.getValueByKey = function(k){
+    var p = new RegExp('\\b'+k+'\\b','gi');
+    return this.search(p) != -1 ? decodeURIComponent(this.substr(this.search(p)+k.length+1).substr(0,this.substr(this.search(p)+k.length+1).search(/(&amp;|;|$)/))) : "";
+};
+</code></pre>
+
+<p>Then call it like so:</p>
+
+<pre><code>if(location.search != "") location.search.getValueByKey("id");
+</code></pre>
+
+<p>You can use this for <strong>cookies</strong> also:</p>
+
+<pre><code>if(navigator.cookieEnabled) document.cookie.getValueByKey("username");
+</code></pre>
+
+<p>This only works for strings that have <code>key=value[&amp;|;|$]</code>... will not work on objects/arrays.</p>
+
+<p>If you <strong>don't</strong> want to use <strong>String.prototype</strong>...
+move it to a function and pass the string as an argument</p>
+</tr></td><tr><td><p>I like <a href="https://stackoverflow.com/a/3867610/632117">Ryan Phelan's solution</a>. But I don't see any point of extending jQuery for that? There is no usage of jQuery functionality.</p>
+
+<p>On the other hand, I like the built-in function in Google Chrome: window.location.getParameter.</p>
+
+<p>So why not to use this? Okay, other browsers don't have. So let's create this function if it does not exist:</p>
+
+<pre><code>if (!window.location.getParameter ) {
+  window.location.getParameter = function(key) {
+    function parseParams() {
+        var params = {},
+            e,
+            a = /\+/g,  // Regex for replacing addition symbol with a space
+            r = /([^&amp;=]+)=?([^&amp;]*)/g,
+            d = function (s) { return decodeURIComponent(s.replace(a, " ")); },
+            q = window.location.search.substring(1);
+
+        while (e = r.exec(q))
+            params[d(e[1])] = d(e[2]);
+
+        return params;
+    }
+
+    if (!this.queryStringParams)
+        this.queryStringParams = parseParams(); 
+
+    return this.queryStringParams[key];
+  };
+}
+</code></pre>
+
+<p>This function is more or less from Ryan Phelan, but it is wrapped differently: clear name and no dependencies of other javascript libraries. <a href="http://sharepointkunskap.wordpress.com/2012/01/11/get-url-parameters-with-javascript/" rel="noreferrer">More about this function on my blog</a>.</p>
+</tr></td><tr><td><p>Keep it simple in plain JavaScript code:</p>
+
+<pre><code>function qs(key) {
+    var vars = [], hash;
+    var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&amp;');
+    for(var i = 0; i &lt; hashes.length; i++)
+    {
+        hash = hashes[i].split('=');
+        vars.push(hash[0]);
+        vars[hash[0]] = hash[1];
+    }
+    return vars[key];
+}
+</code></pre>
+
+<p>Call it from anywhere in the JavaScript code:</p>
+
+<pre><code>var result = qs('someKey');
+</code></pre>
+</tr></td><tr><td><p>If you're doing more URL manipulation than simply parsing the querystring, you may find <a href="http://medialize.github.com/URI.js/" rel="noreferrer">URI.js</a> helpful. It is a library for manipulating URLs - and comes with all the bells and whistles. (Sorry for self-advertising here)</p>
+
+<p>to convert your querystring into a map:</p>
+
+<pre><code>var data = URI('?foo=bar&amp;bar=baz&amp;foo=world').query(true);
+data == {
+  "foo": ["bar", "world"],
+  "bar": "baz"
+}
+</code></pre>
+
+<p>(URI.js also "fixes" bad querystrings like <code>?&amp;foo&amp;&amp;bar=baz&amp;</code> to <code>?foo&amp;bar=baz</code>)</p>
+</tr></td><tr><td><p>Here's my own take on this. This first function decodes a URL string into an object of name/value pairs:</p>
+
+<pre><code>url_args_decode = function (url) {
+  var args_enc, el, i, nameval, ret;
+  ret = {};
+  // use the DOM to parse the URL via an 'a' element
+  el = document.createElement("a");
+  el.href = url;
+  // strip off initial ? on search and split
+  args_enc = el.search.substring(1).split('&amp;');
+  for (i = 0; i &lt; args_enc.length; i++) {
+    // convert + into space, split on =, and then decode 
+    args_enc[i].replace(/\+/g, ' ');
+    nameval = args_enc[i].split('=', 2);
+    ret[decodeURIComponent(nameval[0])]=decodeURIComponent(nameval[1]);
+  }
+  return ret;
+};
+</code></pre>
+
+<p>And as an added bonus, if you change some of the args, you can use this second function to put the array of args back into the URL string:</p>
+
+<pre><code>url_args_replace = function (url, args) {
+  var args_enc, el, name;
+  // use the DOM to parse the URL via an 'a' element
+  el = document.createElement("a");
+  el.href = url;
+  args_enc = [];
+  // encode args to go into url
+  for (name in args) {
+    if (args.hasOwnProperty(name)) {
+      name = encodeURIComponent(name);
+      args[name] = encodeURIComponent(args[name]);
+      args_enc.push(name + '=' + args[name]);
+    }
+  }
+  if (args_enc.length &gt; 0) {
+    el.search = '?' + args_enc.join('&amp;');
+  } else {
+    el.search = '';
+  }
+  return el.href;
+};
+</code></pre>
+</tr></td><tr><td><pre><code>function getUrlVar(key){
+    var result = new RegExp(key + "=([^&amp;]*)", "i").exec(window.location.search); 
+    return result &amp;&amp; unescape(result[1]) || ""; 
+}
+</code></pre>
+
+<p><a href="https://gist.github.com/1771618" rel="noreferrer">https://gist.github.com/1771618</a></p>
+</tr></td><tr><td><p>The following code will create an object which has two methods:</p>
+
+<ol>
+<li><code>isKeyExist</code>: Check if a particular parameter exist</li>
+<li><code>getValue</code>: Get the value of a particular parameter.</li>
+</ol>
+
+<p>&nbsp;</p>
+
+<pre><code>var QSParam = new function() {
+       var qsParm = {};
+       var query = window.location.search.substring(1);
+       var params = query.split('&amp;');
+       for (var i = 0; i &lt; params.length; i++) {
+           var pos = params[i].indexOf('=');
+           if (pos &gt; 0) {
+               var key = params[i].substring(0, pos);
+               var val = params[i].substring(pos + 1);
+               qsParm[key] = val;
+           }
+       }
+       this.isKeyExist = function(query){
+           if(qsParm[query]){
+               return true;
+           }
+           else{
+              return false;
+           }
+       };
+       this.getValue = function(query){
+           if(qsParm[query])
+           {
+               return qsParm[query];
+           }
+           throw "URL does not contain query "+ query;
+       }
+};
+</code></pre>
+</tr></td><tr><td><p>Here is a fast way to get an object similar to the PHP <a href="http://php.net/manual/en/reserved.variables.get.php">$_GET</a> array:</p>
+
+<pre><code>function get_query(){
+    var url = location.search;
+    var qs = url.substring(url.indexOf('?') + 1).split('&amp;');
+    for(var i = 0, result = {}; i &lt; qs.length; i++){
+        qs[i] = qs[i].split('=');
+        result[qs[i][0]] = decodeURIComponent(qs[i][1]);
+    }
+    return result;
+}
+</code></pre>
+
+<p>Usage:</p>
+
+<pre><code>var $_GET = get_query();
+</code></pre>
+
+<p>For the query string <code>x=5&amp;y&amp;z=hello&amp;x=6</code> this returns the object:</p>
+
+<pre><code>{
+  x: "6",
+  y: undefined,
+  z: "hello"
+}
+</code></pre>
+</tr></td><tr><td><h1>URLSearchParams</h1>
+
+<p>Firefox 44+, Opera 36+, Edge 17+, Safari 10.3+ and Chrome 49+ support the <a href="https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams" rel="noreferrer">URLSearchParams</a> API:</p>
+
+<ul>
+<li><a href="https://developers.google.com/web/updates/2016/01/urlsearchparams" rel="noreferrer">Chrome Announcement and details</a></li>
+<li><a href="https://dev.opera.com/blog/opera-36/" rel="noreferrer">Opera Announcement and details</a></li>
+<li><a href="https://developer.mozilla.org/en-US/Firefox/Releases/44#Miscellaneous" rel="noreferrer">Firefox Announcement and details</a></li>
+</ul>
+
+<p>There is a google-suggested <strong><a href="https://github.com/WebReflection/url-search-params" rel="noreferrer">URLSearchParams polyfill</a></strong> for the stable versions of IE.</p>
+
+<p>It is not standardized by <a href="https://www.w3.org/TR/2014/WD-url-1-20141209/#interface-urlsearchparams" rel="noreferrer">W3C</a>, but it is a living standard by <a href="https://url.spec.whatwg.org" rel="noreferrer">WhatWG</a>.</p>
+
+<p>You can use it on <code>location</code>:</p>
+
+<pre><code>let params = new URLSearchParams(location.search);
+</code></pre>
+
+<p>or</p>
+
+<pre><code>let params = (new URL(location)).searchParams;
+</code></pre>
+
+<p>Or of course on any URL:</p>
+
+<pre><code>let url = new URL('https://example.com?foo=1&amp;bar=2');
+let params = new URLSearchParams(url.search);
+</code></pre>
+
+<p>You can get params also using a shorthand <code>.searchParams</code> property on the URL object, like this:</p>
+
+<pre><code>let params = new URL('https://example.com?foo=1&amp;bar=2').searchParams;
+params.get('foo'); // "1"
+params.get('bar'); // "2" 
+</code></pre>
+
+<p>You read/set parameters through the <code>get(KEY)</code>, <code>set(KEY, VALUE)</code>, <code>append(KEY, VALUE)</code> API. You can also iterate over all values <code>for (let p of params) {}</code>.</p>
+
+<p>A <a href="https://trac.webkit.org/browser/trunk/Source/WebCore/platform/URLParser.cpp" rel="noreferrer">reference implementation</a> and a <a href="https://googlechrome.github.io/samples/urlsearchparams/" rel="noreferrer">sample page</a> are available for auditing and testing.</p>
+</tr></td><tr><td><p>Just use two <strong>splits</strong>:</p>
+
+<pre><code>function get(n) {
+    var half = location.search.split(n + '=')[1];
+    return half !== undefined ? decodeURIComponent(half.split('&amp;')[0]) : null;
+}
+</code></pre>
+
+<p>I was reading all the previous and more complete answers. But I think that is the simplest and faster method. You can check in this jsPerf <a href="http://jsperf.com/querystring-with-javascript/9" rel="noreferrer">benchmark</a></p>
+
+<p>To solve the problem in Rup's comment, add a conditional split by changing the first line to the two below. But absolute accuracy means it's now slower than regexp (see <a href="http://jsperf.com/querystring-with-javascript/10" rel="noreferrer">jsPerf</a>).</p>
+
+<pre><code>function get(n) {
+    var half = location.search.split('&amp;' + n + '=')[1];
+    if (!half) half = location.search.split('?' + n + '=')[1];
+    return half !== undefined ? decodeURIComponent(half.split('&amp;')[0]) : null;
+}
+</code></pre>
+
+<p>So if you know you won't run into Rup's counter-case, this wins. Otherwise, regexp.</p>
+
+<blockquote>
+  <p><em>Or</em> if you have control of the querystring and can guarantee that a value you are trying to get will never contain any URL encoded
+  characters (having these in a value would be a bad idea) - you can use
+  the following slightly more simplified and readable version of the 1st option:</p>
+
+<pre><code>    function getQueryStringValueByName(name) {
+        var queryStringFromStartOfValue = location.search.split(name + '=')[1];
+         return queryStringFromStartOfValue !== undefined ? queryStringFromStartOfValue.split('&amp;')[0] : null;
+</code></pre>
+</blockquote>
+</tr></td><tr><td><p>These are all great answers, but I needed something a bit more robust, and thought you all might like to have what I created.</p>
+
+<p>It is a simple library method that does dissection and manipulation of URL parameters. The static method has the following sub methods that can be called on the subject URL:</p>
+
+<ul>
+<li>getHost</li>
+<li>getPath</li>
+<li>getHash</li>
+<li>setHash</li>
+<li>getParams</li>
+<li>getQuery</li>
+<li>setParam</li>
+<li>getParam</li>
+<li>hasParam</li>
+<li>removeParam</li>
+</ul>
+
+<p>Example:</p>
+
+<pre><code>URLParser(url).getParam('myparam1')
+</code></pre>
+
+<hr>
+
+<pre><code>var url = "http://www.test.com/folder/mypage.html?myparam1=1&amp;myparam2=2#something";
+
+function URLParser(u){
+    var path="",query="",hash="",params;
+    if(u.indexOf("#") &gt; 0){
+        hash = u.substr(u.indexOf("#") + 1);
+        u = u.substr(0 , u.indexOf("#"));
+    }
+    if(u.indexOf("?") &gt; 0){
+        path = u.substr(0 , u.indexOf("?"));
+        query = u.substr(u.indexOf("?") + 1);
+        params= query.split('&amp;');
+    }else
+        path = u;
+    return {
+        getHost: function(){
+            var hostexp = /\/\/([\w.-]*)/;
+            var match = hostexp.exec(path);
+            if (match != null &amp;&amp; match.length &gt; 1)
+                return match[1];
+            return "";
+        },
+        getPath: function(){
+            var pathexp = /\/\/[\w.-]*(?:\/([^?]*))/;
+            var match = pathexp.exec(path);
+            if (match != null &amp;&amp; match.length &gt; 1)
+                return match[1];
+            return "";
+        },
+        getHash: function(){
+            return hash;
+        },
+        getParams: function(){
+            return params
+        },
+        getQuery: function(){
+            return query;
+        },
+        setHash: function(value){
+            if(query.length &gt; 0)
+                query = "?" + query;
+            if(value.length &gt; 0)
+                query = query + "#" + value;
+            return path + query;
+        },
+        setParam: function(name, value){
+            if(!params){
+                params= new Array();
+            }
+            params.push(name + '=' + value);
+            for (var i = 0; i &lt; params.length; i++) {
+                if(query.length &gt; 0)
+                    query += "&amp;";
+                query += params[i];
+            }
+            if(query.length &gt; 0)
+                query = "?" + query;
+            if(hash.length &gt; 0)
+                query = query + "#" + hash;
+            return path + query;
+        },
+        getParam: function(name){
+            if(params){
+                for (var i = 0; i &lt; params.length; i++) {
+                    var pair = params[i].split('=');
+                    if (decodeURIComponent(pair[0]) == name)
+                        return decodeURIComponent(pair[1]);
+                }
+            }
+            console.log('Query variable %s not found', name);
+        },
+        hasParam: function(name){
+            if(params){
+                for (var i = 0; i &lt; params.length; i++) {
+                    var pair = params[i].split('=');
+                    if (decodeURIComponent(pair[0]) == name)
+                        return true;
+                }
+            }
+            console.log('Query variable %s not found', name);
+        },
+        removeParam: function(name){
+            query = "";
+            if(params){
+                var newparams = new Array();
+                for (var i = 0;i &lt; params.length;i++) {
+                    var pair = params[i].split('=');
+                    if (decodeURIComponent(pair[0]) != name)
+                          newparams .push(params[i]);
+                }
+                params = newparams;
+                for (var i = 0; i &lt; params.length; i++) {
+                    if(query.length &gt; 0)
+                        query += "&amp;";
+                    query += params[i];
+                }
+            }
+            if(query.length &gt; 0)
+                query = "?" + query;
+            if(hash.length &gt; 0)
+                query = query + "#" + hash;
+            return path + query;
+        },
+    }
+}
+
+
+document.write("Host: " + URLParser(url).getHost() + '&lt;br&gt;');
+document.write("Path: " + URLParser(url).getPath() + '&lt;br&gt;');
+document.write("Query: " + URLParser(url).getQuery() + '&lt;br&gt;');
+document.write("Hash: " + URLParser(url).getHash() + '&lt;br&gt;');
+document.write("Params Array: " + URLParser(url).getParams() + '&lt;br&gt;');
+document.write("Param: " + URLParser(url).getParam('myparam1') + '&lt;br&gt;');
+document.write("Has Param: " + URLParser(url).hasParam('myparam1') + '&lt;br&gt;');
+
+document.write(url + '&lt;br&gt;');
+
+// Remove the first parameter
+url = URLParser(url).removeParam('myparam1');
+document.write(url + ' - Remove the first parameter&lt;br&gt;');
+
+// Add a third parameter
+url = URLParser(url).setParam('myparam3',3);
+document.write(url + ' - Add a third parameter&lt;br&gt;');
+
+// Remove the second parameter
+url = URLParser(url).removeParam('myparam2');
+document.write(url + ' - Remove the second parameter&lt;br&gt;');
+
+// Add a hash
+url = URLParser(url).setHash('newhash');
+document.write(url + ' - Set Hash&lt;br&gt;');
+
+// Remove the last parameter
+url = URLParser(url).removeParam('myparam3');
+document.write(url + ' - Remove the last parameter&lt;br&gt;');
+
+// Remove a parameter that doesn't exist
+url = URLParser(url).removeParam('myparam3');
+document.write(url + ' - Remove a parameter that doesn\"t exist&lt;br&gt;');
+</code></pre>
+</tr></td><tr><td><p>There is a nice little <code>url</code> utility for this with some cool sugaring:</p>
+
+<pre><code>http://www.example.com/path/index.html?silly=willy#chucky=cheese
+
+url();            // http://www.example.com/path/index.html?silly=willy#chucky=cheese
+url('domain');    // example.com
+url('1');         // path
+url('-1');        // index.html
+url('?');         // silly=willy
+url('?silly');    // willy
+url('?poo');      // (an empty string)
+url('#');         // chucky=cheese
+url('#chucky');   // cheese
+url('#poo');      // (an empty string)
+</code></pre>
+
+<p>Check out more examples and download here: <a href="https://github.com/websanova/js-url#url">https://github.com/websanova/js-url#url</a></p>
+</tr></td><tr><td>
+
+<p>This function converts the querystring to a JSON-like object, it also handles value-less and multi-value parameters:</p>
+
+<pre class="lang-js prettyprint-override"><code>"use strict";
+function getQuerystringData(name) {
+    var data = { };
+    var parameters = window.location.search.substring(1).split("&amp;");
+    for (var i = 0, j = parameters.length; i &lt; j; i++) {
+        var parameter = parameters[i].split("=");
+        var parameterName = decodeURIComponent(parameter[0]);
+        var parameterValue = typeof parameter[1] === "undefined" ? parameter[1] : decodeURIComponent(parameter[1]);
+        var dataType = typeof data[parameterName];
+        if (dataType === "undefined") {
+            data[parameterName] = parameterValue;
+        } else if (dataType === "array") {
+            data[parameterName].push(parameterValue);
+        } else {
+            data[parameterName] = [data[parameterName]];
+            data[parameterName].push(parameterValue);
+        }
+    }
+    return typeof name === "string" ? data[name] : data;
+}
+</code></pre>
+
+<p>We perform a check for <code>undefined</code> on <code>parameter[1]</code> because <code>decodeURIComponent</code> returns the string "undefined" if the variable is <code>undefined</code>, and that's wrong.</p>
+
+<p>Usage:</p>
+
+<pre class="lang-js prettyprint-override"><code>"use strict";
+var data = getQuerystringData();
+var parameterValue = getQuerystringData("parameterName");
+</code></pre>
+</tr></td><tr><td><p>One-liner to get the query:</p>
+
+<pre><code>var value = location.search.match(new RegExp(key + "=(.*?)($|\&amp;)", "i"))[1];
+</code></pre>
+</tr></td><tr><td><p>The problem with the top answer on that question is that it's not-supported parameters placed after #, but sometimes it's needed to get this value also.</p>
+
+<p>I modified the answer to let it parse a full query string with a hash sign also:</p>
+
+<pre><code>var getQueryStringData = function(name) {
+    var result = null;
+    var regexS = "[\\?&amp;#]" + name + "=([^&amp;#]*)";
+    var regex = new RegExp(regexS);
+    var results = regex.exec('?' + window.location.href.split('?')[1]);
+    if (results != null) {
+        result = decodeURIComponent(results[1].replace(/\+/g, " "));
+    }
+    return result;
+};
+</code></pre>
+</tr></td><tr><td><p>I did a small URL library for my needs here: <a href="https://github.com/Mikhus/jsurl" rel="nofollow">https://github.com/Mikhus/jsurl</a></p>
+
+<p>It's a more common way of manipulating the URLs in JavaScript. Meanwhile it's really lightweight (minified and gzipped &lt; 1&nbsp;KB) and has a very simple and clean API. And it does not need any other library to work.</p>
+
+<p>Regarding the initial question, it's very simple to do:</p>
+
+<pre><code>var u = new Url; // Current document URL
+// or
+var u = new Url('http://user:pass@example.com:8080/some/path?foo=bar&amp;bar=baz#anchor');
+
+// Looking for query string parameters
+alert( u.query.bar);
+alert( u.query.foo);
+
+// Modifying query string parameters
+u.query.foo = 'bla';
+u.query.woo = ['hi', 'hey']
+
+alert(u.query.foo);
+alert(u.query.woo);
+alert(u);
+</code></pre>
+</tr></td><tr><td><p>I believe this to be an accurate and concise way to achieve this (modified from <a href="http://css-tricks.com/snippets/javascript/get-url-variables/" rel="nofollow">http://css-tricks.com/snippets/javascript/get-url-variables/</a>):</p>
+
+<pre class="lang-js prettyprint-override"><code>function getQueryVariable(variable) {
+
+    var query = window.location.search.substring(1),            // Remove the ? from the query string.
+        vars = query.split("&amp;");                                // Split all values by ampersand.
+
+    for (var i = 0; i &lt; vars.length; i++) {                     // Loop through them...
+        var pair = vars[i].split("=");                          // Split the name from the value.
+        if (pair[0] == variable) {                              // Once the requested value is found...
+            return ( pair[1] == undefined ) ? null : pair[1];   // Return null if there is no value (no equals sign), otherwise return the value.
+        }
+    }
+
+    return undefined;                                           // Wasn't found.
+
+}
+</code></pre>
+</tr></td><tr><td><p>If you are using Browserify, you can use the <code>url</code> module from <em>Node.js</em>:</p>
+
+<pre><code>var url = require('url');
+
+url.parse('http://example.com/?bob=123', true).query;
+
+// returns { "bob": "123" }
+</code></pre>
+
+<p>Further reading: <a href="http://nodejs.org/api/url.html" rel="noreferrer"><strong>URL Node.js v0.12.2 Manual &amp; Documentation</strong></a></p>
+
+<p><strong>EDIT:</strong> You can use <a href="https://developer.mozilla.org/en-US/docs/Web/API/URL" rel="noreferrer">URL</a> interface, its quite widely adopted in almost all the new browser and if the code is going to run on an old browser you can use a <a href="https://github.com/lifaon74/url-polyfill" rel="noreferrer">polyfill like this one</a>. Here's a code example on how to use URL interface to get query parameters (aka search parameters)</p>
+
+<pre><code>const url = new URL('http://example.com/?bob=123');
+url.searchParams.get('bob'); 
+</code></pre>
+
+<p>You can also use URLSearchParams for it, here's <a href="https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams#Example" rel="noreferrer">an example from MDN</a> to do it with URLSearchParams:</p>
+
+<pre><code>var paramsString = "q=URLUtils.searchParams&amp;topic=api";
+var searchParams = new URLSearchParams(paramsString);
+
+//Iterate the search parameters.
+for (let p of searchParams) {
+  console.log(p);
+}
+
+searchParams.has("topic") === true; // true
+searchParams.get("topic") === "api"; // true
+searchParams.getAll("topic"); // ["api"]
+searchParams.get("foo") === null; // true
+searchParams.append("topic", "webdev");
+searchParams.toString(); // "q=URLUtils.searchParams&amp;topic=api&amp;topic=webdev"
+searchParams.set("topic", "More webdev");
+searchParams.toString(); // "q=URLUtils.searchParams&amp;topic=More+webdev"
+searchParams.delete("topic");
+searchParams.toString(); // "q=URLUtils.searchParams"
+</code></pre>
+</tr></td><tr><td><p>I developed a small library using techniques listed here to create an easy to use, drop-in solution to anyones troubles; It can be found here: </p>
+
+<p><a href="https://github.com/Nijikokun/query-js" rel="noreferrer">https://github.com/Nijikokun/query-js</a></p>
+
+<p><strong>Usage</strong></p>
+
+<p>Fetching specific parameter/key:</p>
+
+<pre><code>query.get('param');
+</code></pre>
+
+<p>Using the builder to fetch the entire object:</p>
+
+<pre><code>var storage = query.build();
+console.log(storage.param);
+</code></pre>
+
+<p>and tons more... check the github link for more examples.</p>
+
+<p><strong>Features</strong></p>
+
+<ol>
+<li>Caching on both decoding and parameters</li>
+<li>Supports hash query strings <code>#hello?page=3</code></li>
+<li>Supports passing custom queries</li>
+<li>Supports Array / Object Parameters <code>user[]="jim"&amp;user[]="bob"</code></li>
+<li>Supports empty management <code>&amp;&amp;</code></li>
+<li>Supports declaration parameters without values <code>name&amp;hello="world"</code></li>
+<li>Supports repeated parameters <code>param=1&amp;param=2</code></li>
+<li>Clean, compact, and readable source <code>4kb</code></li>
+<li>AMD, Require, Node support</li>
+</ol>
+</tr></td><tr><td><p><em><strong>This the most simple and small function JavaScript to get int ans String parameter value from URL</em></strong></p>
+
+<pre><code>/* THIS FUNCTION IS TO FETCH INT PARAMETER VALUES */
+
+function getParameterint(param) {
+            var val = document.URL;
+            var url = val.substr(val.indexOf(param))  
+            var n=parseInt(url.replace(param+"=",""));
+            alert(n); 
+}
+getParameteraint("page");
+getParameteraint("pagee");
+
+/*THIS FUNCTION IS TO FETCH STRING PARAMETER*/
+function getParameterstr(param) {
+            var val = document.URL;
+            var url = val.substr(val.indexOf(param))  
+            var n=url.replace(param+"=","");
+            alert(n); 
+}
+getParameterstr("str");
+</code></pre>
+
+<p><strong>Source And DEMO :</strong> <a href="http://bloggerplugnplay.blogspot.in/2012/08/how-to-get-url-parameter-in-javascript.html" rel="nofollow">http://bloggerplugnplay.blogspot.in/2012/08/how-to-get-url-parameter-in-javascript.html</a></p>
+</tr></td><tr><td><p>From <a href="https://developer.mozilla.org/en-US/docs/Web/API/URLUtils/search#Get_the_value_of_a_single_search_param">the MDN</a>:</p>
+
+<pre><code>function loadPageVar (sVar) {
+  return unescape(window.location.search.replace(new RegExp("^(?:.*[&amp;\\?]" + escape(sVar).replace(/[\.\+\*]/g, "\\$&amp;") + "(?:\\=([^&amp;]*))?)?.*$", "i"), "$1"));
+}
+
+alert(loadPageVar("name"));
+</code></pre>
+</tr></td><tr><td><p>A very lightweight jQuery method: </p>
+
+<pre><code>var qs = window.location.search.replace('?','').split('&amp;'),
+    request = {};
+$.each(qs, function(i,v) {
+    var initial, pair = v.split('=');
+    if(initial = request[pair[0]]){
+        if(!$.isArray(initial)) {
+            request[pair[0]] = [initial]
+        }
+        request[pair[0]].push(pair[1]);
+    } else {
+        request[pair[0]] = pair[1];
+    }
+    return;
+});
+console.log(request);
+</code></pre>
+
+<p>And to alert, for example ?q</p>
+
+<pre><code>alert(request.q)
+</code></pre>
+</tr></td><tr><td><p>If you want array-style parameters <a href="https://github.com/kevincox/url.js" rel="nofollow">URL.js</a> supports arbitrarily nested array-style parameters as well as string indexes (maps). It also handles URL decoding.</p>
+
+<pre><code>url.get("val[0]=zero&amp;val[1]=one&amp;val[2]&amp;val[3]=&amp;val[4]=four&amp;val[5][0]=n1&amp;val[5][1]=n2&amp;val[5][2]=n3&amp;key=val", {array:true});
+// Result
+{
+    val: [
+        'zero',
+        'one',
+        true,
+        '',
+        'four',
+        [ 'n1', 'n2', 'n3' ]
+    ]
+    key: 'val'
+}
+</code></pre>
+</tr></td><tr><td><p>I needed an object from the query string, and I hate lots of code. It may not be the most robust in the universe, but it's just a few lines of code.</p>
+
+<pre><code>var q = {};
+location.href.split('?')[1].split('&amp;').forEach(function(i){
+    q[i.split('=')[0]]=i.split('=')[1];
+});
+</code></pre>
+
+<p>A URL like <code>this.htm?hello=world&amp;foo=bar</code> will create:</p>
+
+<pre><code>{hello:'world', foo:'bar'}
+</code></pre>
+</tr></td><tr><td><pre><code>function GetQueryStringParams(sParam)
+{
+    var sPageURL = window.location.search.substring(1);
+    var sURLVariables = sPageURL.split('&amp;');
+
+    for (var i = 0; i &lt; sURLVariables.length; i++)
+    {
+        var sParameterName = sURLVariables[i].split('=');
+        if (sParameterName[0] == sParam)
+        {
+            return sParameterName[1];
+        }
+    }
+}?
+</code></pre>
+
+<p>And this is how you can use this function assuming the URL is</p>
+
+<blockquote>
+  <p><code>http://dummy.com/?stringtext=jquery&amp;stringword=jquerybyexample</code></p>
+</blockquote>
+
+<pre><code>var tech = GetQueryStringParams('stringtext');
+var blog = GetQueryStringParams('stringword');
+</code></pre>
+</tr></td><tr><td><pre><code>var getUrlParameters = function (name, url) {
+    if (!name) {
+        return undefined;
+    }
+
+    name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+    url = url || location.search;
+
+    var regex = new RegExp('[\\?&amp;#]' + name + '=?([^&amp;#]*)', 'gi'), result, resultList = [];
+
+    while (result = regex.exec(url)) {
+        resultList.push(decodeURIComponent(result[1].replace(/\+/g, ' ')));
+    }
+
+    return resultList.length ? resultList.length === 1 ? resultList[0] : resultList : undefined;
+};
+</code></pre>
+</tr></td><tr><td><p>There's a robust implementation in Node.js's source<br>
+<a href="https://github.com/joyent/node/blob/master/lib/querystring.js" rel="nofollow noreferrer">https://github.com/joyent/node/blob/master/lib/querystring.js</a>  </p>
+
+<p>Also TJ's qs does nested params parsing<br>
+<a href="https://github.com/visionmedia/node-querystring" rel="nofollow noreferrer">https://github.com/visionmedia/node-querystring</a>  </p>
+</tr></td><tr><td><p>Use:</p>
+
+<pre><code>  $(document).ready(function () {
+      var urlParams = {};
+      (function () {
+          var match,
+          pl = /\+/g, // Regex for replacing addition symbol with a space
+              search = /([^&amp;=]+)=?([^&amp;]*)/g,
+              decode = function (s) {
+                  return decodeURIComponent(s.replace(pl, " "));
+              },
+              query = window.location.search.substring(1);
+
+          while (match = search.exec(query))
+              urlParams[decode(match[1])] = decode(match[2]);
+      })();
+      if (urlParams["q1"] === 1) {
+          return 1;
+      }
+</code></pre>
+
+<p>Please check and let me know your comments. Also refer to <em><a href="http://jquerybyexample.blogspot.com/2012/05/how-to-get-querystring-value-using.html" rel="nofollow">How to get querystring value using jQuery</a></em>.</p>
+</tr></td><tr><td><p>See this <a href="http://www.darlesson.com/jquery/querystring/" rel="nofollow">post</a> or use this:</p>
+
+<pre><code>&lt;script type="text/javascript" language="javascript"&gt;
+    $(document).ready(function()
+    {
+        var urlParams = {};
+        (function ()
+        {
+            var match,
+            pl= /\+/g,  // Regular expression for replacing addition symbol with a space
+            search = /([^&amp;=]+)=?([^&amp;]*)/g,
+            decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
+            query  = window.location.search.substring(1);
+
+            while (match = search.exec(query))
+                urlParams[decode(match[1])] = decode(match[2]);
+        })();
+
+        if (urlParams["q1"] === 1)
+        {
+            return 1;
+        }
+    });
+&lt;/script&gt;
+</code></pre>
+</tr></td><tr><td><p>If you do not wish to use a JavaScript library you can use the JavaScript string functions to parse <code>window.location</code>. Keep this code in an external .js file and you can use it over and over again in different projects.</p>
+
+<pre><code>// Example - window.location = "index.htm?name=bob";
+
+var value = getParameterValue("name");
+
+alert("name = " + value);
+
+function getParameterValue(param)
+{
+    var url = window.location;
+    var parts = url.split('?');
+    var params = parts[1].split('&amp;');
+    var val = "";
+
+    for ( var i=0; i&lt;params.length; i++)
+    {
+        var paramNameVal = params[i].split('=');
+
+        if ( paramNameVal[0] == param )
+        {
+            val = paramNameVal[1];
+        }
+    }
+    return val;
+}
+</code></pre>
+</tr></td><tr><td><p>I recommend <a href="http://www.darlesson.com/jquery/querystring/" rel="nofollow">Dar Lessons</a> as a good plugin. I have worked with it fo  a long time. You can also use the following code.
+Jus put <code>var queryObj = {};</code> before document.ready and put the bellow code in the beginning of document.ready. After this code you can use <code>queryObj["queryObjectName"]</code> for any query object you have</p>
+
+<pre><code>var querystring = location.search.replace('?', '').split('&amp;');
+for (var i = 0; i &lt; querystring.length; i++) {
+    var name = querystring[i].split('=')[0];
+    var value = querystring[i].split('=')[1];
+    queryObj[name] = value;
+}
+</code></pre>
+</tr></td><tr><td><p>I used this code (JavaScript) to get the what is passed through the URL:</p>
+
+<pre><code>function getUrlVars() {
+            var vars = {};
+            var parts = window.location.href.replace(/[?&amp;]+([^=&amp;]+)=([^&amp;]*)/gi, function(m,key,value) {
+                vars[key] = value;
+            });
+            return vars;
+        }
+</code></pre>
+
+<p>Then to assign the value to a variable, you only have to specify which parameter you want to get, ie if the URL is <code>example.com/?I=1&amp;p=2&amp;f=3</code></p>
+
+<p>You can do this to get the values:</p>
+
+<pre><code>var getI = getUrlVars()["I"];
+var getP = getUrlVars()["p"];
+var getF = getUrlVars()["f"];
+</code></pre>
+
+<p>then the values would be:</p>
+
+<pre><code>getI = 1, getP = 2 and getF = 3
+</code></pre>
+</tr></td><tr><td><p>There are many solutions to retrieve URI query values, I prefer this one because it's short and works great:</p>
+
+<pre><code>function get(name){
+   if(name=(new RegExp('[?&amp;]'+encodeURIComponent(name)+'=([^&amp;]*)')).exec(location.search))
+      return decodeURIComponent(name[1]);
+}
+</code></pre>
+</tr></td><tr><td><pre><code>http://someurl.com?key=value&amp;keynovalue&amp;keyemptyvalue=&amp;&amp;keynovalue=nowhasvalue#somehash
+</code></pre>
+
+<ul>
+<li>Regular key/value pair (<code>?param=value</code>)</li>
+<li>Keys w/o value (<code>?param</code> : no equal sign or value)</li>
+<li>Keys w/ empty value (<code>?param=</code> : equal sign, but no value to right of equal sign)</li>
+<li>Repeated Keys (<code>?param=1&amp;param=2</code>)</li>
+<li>Removes Empty Keys (<code>?&amp;&amp;</code> : no key or value)</li>
+</ul>
+
+<h3>Code:</h3>
+
+<ul>
+<li><pre><code>var queryString = window.location.search || '';
+var keyValPairs = [];
+var params      = {};
+queryString     = queryString.substr(1);
+
+if (queryString.length)
+{
+   keyValPairs = queryString.split('&amp;');
+   for (pairNum in keyValPairs)
+   {
+      var key = keyValPairs[pairNum].split('=')[0];
+      if (!key.length) continue;
+      if (typeof params[key] === 'undefined')
+         params[key] = [];
+      params[key].push(keyValPairs[pairNum].split('=')[1]);
+   }
+}
+</code></pre></li>
+</ul>
+
+<h3>How to Call:</h3>
+
+<ul>
+<li><pre><code>params['key'];  // returns an array of values (1..n)
+</code></pre></li>
+</ul>
+
+<h3>Output:</h3>
+
+<ul>
+<li><pre><code>key            ["value"]
+keyemptyvalue  [""]
+keynovalue     [undefined, "nowhasvalue"]
+</code></pre></li>
+</ul>
+</tr></td><tr><td><p>The following function returns an object version of your queryString. 
+You can simply write <code>obj.key1</code> and  <code>obj.key2</code> to access values of <code>key1</code> and <code>key2</code> in parameter.</p>
+
+<pre><code>function getQueryStringObject()
+{
+    var querystring = document.location.search.replace('?','').split( '&amp;' );
+    var objQueryString={};
+    var key="",val="";
+    if(typeof querystring == 'undefined')
+    {
+        return (typeof querystring);
+    }
+    for(i=0;i&lt;querystring.length;i++)
+    {
+        key=querystring[i].split("=")[0];
+        val=querystring[i].split("=")[1];
+        objQueryString[key] = val;
+    }
+    return objQueryString;
+}
+</code></pre>
+
+<p>And to use this function you can write</p>
+
+<pre><code>var obj= getQueryStringObject();
+alert(obj.key1);
+</code></pre>
+</tr></td><tr><td><p>This one works fine</p>
+
+<pre><code>function getQuerystring(key) {
+    var query = window.location.search.substring(1);
+    var vars = query.split("&amp;");
+    for (var i = 0; i &lt; vars.length; i++) {
+        var pair = vars[i].split("=");
+        if (pair[0] == key) {
+            return pair[1];
+        }
+    }
+}
+</code></pre>
+
+<p>taken from <a href="http://forums.asp.net/t/1771251.aspx/1" rel="noreferrer">here</a></p>
+</tr></td><tr><td><p>I like <a href="http://jquery-howto.blogspot.co.uk/2009/09/get-url-parameters-values-with-jquery.html">this one</a> (taken from jquery-howto.blogspot.co.uk):</p>
+
+<pre><code>// get an array with all querystring values
+// example: var valor = getUrlVars()["valor"];
+function getUrlVars() {
+    var vars = [], hash;
+    var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&amp;');
+    for (var i = 0; i &lt; hashes.length; i++) {
+        hash = hashes[i].split('=');
+        vars.push(hash[0]);
+        vars[hash[0]] = hash[1];
+    }
+    return vars;
+}
+</code></pre>
+
+<p>Works great for me.</p>
+</tr></td><tr><td><h1><em>tl;dr</em></h1>
+
+<p>A quick, <strong>complete solution</strong>, which handles <strong>multivalued keys</strong> and <strong>encoded characters</strong>.</p>
+
+<pre><code>var qd = {};
+if (location.search) location.search.substr(1).split("&amp;").forEach(function(item) {var s = item.split("="), k = s[0], v = s[1] &amp;&amp; decodeURIComponent(s[1]); (qd[k] = qd[k] || []).push(v)})
+
+//using ES6   (23 characters cooler)
+var qd = {};
+if (location.search) location.search.substr(1).split`&amp;`.forEach(item =&gt; {let [k,v] = item.split`=`; v = v &amp;&amp; decodeURIComponent(v); (qd[k] = qd[k] || []).push(v)})
+</code></pre>
+
+Multi-lined:
+
+<pre><code>var qd = {};
+if (location.search) location.search.substr(1).split("&amp;").forEach(function(item) {
+    var s = item.split("="),
+        k = s[0],
+        v = s[1] &amp;&amp; decodeURIComponent(s[1]); //  null-coalescing / short-circuit
+    //(k in qd) ? qd[k].push(v) : qd[k] = [v]
+    (qd[k] = qd[k] || []).push(v) // null-coalescing / short-circuit
+})
+</code></pre>
+
+<p>What is all this code...<br>
+<em><a href="https://stackoverflow.com/q/476436/985454">"null-coalescing"</a>, <a href="https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Operators/Logical_Operators#Short-Circuit_Evaluation" rel="noreferrer">short-circuit evaluation</a><br>
+ES6 <a href="https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment" rel="noreferrer">Destructuring assignments</a>, <a href="https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Functions/Arrow_functions" rel="noreferrer">Arrow functions</a>, <a href="https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Template_literals#Tagged_template_literals" rel="noreferrer">Template strings</a></em></p>
+
+Example:
+
+<pre><code>"?a=1&amp;b=0&amp;c=3&amp;d&amp;e&amp;a=5&amp;a=t%20e%20x%20t&amp;e=http%3A%2F%2Fw3schools.com%2Fmy%20test.asp%3Fname%3Dståle%26car%3Dsaab"
+&gt; qd
+a: ["1", "5", "t e x t"]
+b: ["0"]
+c: ["3"]
+d: [undefined]
+e: [undefined, "http://w3schools.com/my test.asp?name=ståle&amp;car=saab"]
+
+&gt; qd.a[1]    // "5"
+&gt; qd["a"][1] // "5"
+</code></pre>
+
+<p><br></p>
+
+<hr>
+
+<h1>Read more... about the Vanilla JavaScript solution.</h1>
+
+<p><em>To access different parts of a URL use <code>location.(search|hash)</code></em></p>
+
+<h2>Easiest (dummy) solution</h2>
+
+<pre><code>var queryDict = {};
+location.search.substr(1).split("&amp;").forEach(function(item) {queryDict[item.split("=")[0]] = item.split("=")[1]})
+</code></pre>
+
+<ul>
+<li>Handles <b>empty keys</b> correctly.</li>
+<li>Overrides <b>multi-keys</b> with <b>last</b> value found.</li>
+</ul>
+
+<pre><code>"?a=1&amp;b=0&amp;c=3&amp;d&amp;e&amp;a=5"
+&gt; queryDict
+a: "5"
+b: "0"
+c: "3"
+d: undefined
+e: undefined
+</code></pre>
+
+<h2>Multi-valued keys</h2>
+
+<p>Simple key check <code>(item in dict) ? dict.item.push(val) : dict.item = [val]</code></p>
+
+<pre><code>var qd = {};
+location.search.substr(1).split("&amp;").forEach(function(item) {(item.split("=")[0] in qd) ? qd[item.split("=")[0]].push(item.split("=")[1]) : qd[item.split("=")[0]] = [item.split("=")[1]]})
+</code></pre>
+
+<ul>
+<li>Now returns <b>arrays</b> instead.</li>
+<li>Access values by <code>qd.key[index]</code> or <code>qd[key][index]</code></li>
+</ul>
+
+<pre><code>&gt; qd
+a: ["1", "5"]
+b: ["0"]
+c: ["3"]
+d: [undefined]
+e: [undefined]
+</code></pre>
+
+<h2>Encoded characters?</h2>
+
+<p>Use <code>decodeURIComponent()</code> for the second <em>or both</em> splits.</p>
+
+<pre><code>var qd = {};
+location.search.substr(1).split("&amp;").forEach(function(item) {var k = item.split("=")[0], v = decodeURIComponent(item.split("=")[1]); (k in qd) ? qd[k].push(v) : qd[k] = [v]})
+</code></pre>
+
+Example:
+
+<pre><code>"?a=1&amp;b=0&amp;c=3&amp;d&amp;e&amp;a=5&amp;a=t%20e%20x%20t&amp;e=http%3A%2F%2Fw3schools.com%2Fmy%20test.asp%3Fname%3Dståle%26car%3Dsaab"
+&gt; qd
+a: ["1", "5", "t e x t"]
+b: ["0"]
+c: ["3"]
+d: ["undefined"]  // decodeURIComponent(undefined) returns "undefined" !!!*
+e: ["undefined", "http://w3schools.com/my test.asp?name=ståle&amp;car=saab"]
+</code></pre>
+
+<p><br>
+<hr></p>
+
+<h1>From comments</h1>
+
+<p><strong>*!!!</strong> Please note, that <code>decodeURIComponent(undefined)</code> returns string <code>"undefined"</code>. The solution lies in a simple usage of <a href="https://stackoverflow.com/a/476445/985454"><code>&amp;&amp;</code></a>, which ensures that <code>decodeURIComponent()</code> is not called on undefined values. <em>(See the "complete solution" at the top.)</em></p>
+
+<pre><code>v = v &amp;&amp; decodeURIComponent(v);
+</code></pre>
+
+<p><br>
+If the querystring is empty (<code>location.search == ""</code>), the result is somewhat misleading <code>qd == {"": undefined}</code>. It is suggested to check the querystring before launching the parsing function likeso:</p>
+
+<pre><code>if (location.search) location.search.substr(1).split("&amp;").forEach(...)
+</code></pre>
+</tr></td><tr><td><p>Doing this reliably is more involved than one may think at first.</p>
+
+<ol>
+<li><code>location.search</code>, which is used in other answers, is brittle and
+should be avoided - for example, it returns empty if someone screws
+up and puts a <code>#fragment</code> identifier before the <code>?query</code> string.</li>
+<li>There are a number of ways URLs get automatically escaped in the
+browser, which makes <code>decodeURIComponent</code> pretty much mandatory, in
+my opinion.</li>
+<li>Many query strings are generated from user input, which means
+assumptions about the URL content are very bad. Including very basic
+things like that each key is unique or even has a value.</li>
+</ol>
+
+<p>To solve this, here is a configurable API with a healthy dose of <a href="http://en.wikipedia.org/wiki/Defensive_programming" rel="nofollow" title="Wiki article on programming with less assumptions.">defensive programming</a>. Note that it can be made half the size if you are willing to hardcode some of the variables, or if the input can never include <code>hasOwnProperty</code>, etc.</p>
+
+<p><strong>Version 1:</strong> Returns a data object with names and values for each parameter. It effectively de-duplicates them and always respects the first one found from left-to-right.</p>
+
+<pre><code>function getQueryData(url, paramKey, pairKey, missingValue, decode) {
+
+    var query, queryStart, fragStart, pairKeyStart, i, len, name, value, result;
+
+    if (!url || typeof url !== 'string') {
+        url = location.href; // more robust than location.search, which is flaky
+    }
+    if (!paramKey || typeof paramKey !== 'string') {
+        paramKey = '&amp;';
+    }
+    if (!pairKey || typeof pairKey !== 'string') {
+        pairKey = '=';
+    }
+    // when you do not explicitly tell the API...
+    if (arguments.length &lt; 5) {
+        // it will unescape parameter keys and values by default...
+        decode = true;
+    }
+
+    queryStart = url.indexOf('?');
+    if (queryStart &gt;= 0) {
+        // grab everything after the very first ? question mark...
+        query = url.substring(queryStart + 1);
+    } else {
+        // assume the input is already parameter data...
+        query = url;
+    }
+    // remove fragment identifiers...
+    fragStart = query.indexOf('#');
+    if (fragStart &gt;= 0) {
+        // remove everything after the first # hash mark...
+        query = query.substring(0, fragStart);
+    }
+    // make sure at this point we have enough material to do something useful...
+    if (query.indexOf(paramKey) &gt;= 0 || query.indexOf(pairKey) &gt;= 0) {
+        // we no longer need the whole query, so get the parameters...
+        query = query.split(paramKey);
+        result = {};
+        // loop through the parameters...
+        for (i = 0, len = query.length; i &lt; len; i = i + 1) {
+            pairKeyStart = query[i].indexOf(pairKey);
+            if (pairKeyStart &gt;= 0) {
+                name = query[i].substring(0, pairKeyStart);
+            } else {
+                name = query[i];
+            }
+            // only continue for non-empty names that we have not seen before...
+            if (name &amp;&amp; !Object.prototype.hasOwnProperty.call(result, name)) {
+                if (decode) {
+                    // unescape characters with special meaning like ? and #
+                    name = decodeURIComponent(name);
+                }
+                if (pairKeyStart &gt;= 0) {
+                    value = query[i].substring(pairKeyStart + 1);
+                    if (value) {
+                        if (decode) {
+                            value = decodeURIComponent(value);
+                        }
+                    } else {
+                        value = missingValue;
+                    }
+                } else {
+                    value = missingValue;
+                }
+                result[name] = value;
+            }
+        }
+        return result;
+    }
+}
+</code></pre>
+
+<p><strong>Version 2:</strong> Returns a data map object with two identical length arrays, one for names and one for values, with an index for each parameter. This one supports duplicate names and intentionally does not de-duplicate them, because that is probably why you would want to use this format.</p>
+
+<pre><code>function getQueryData(url, paramKey, pairKey, missingValue, decode) {
+
+   var query, queryStart, fragStart, pairKeyStart, i, len, name, value, result;
+
+   if (!url || typeof url !== 'string') {
+       url = location.href; // more robust than location.search, which is flaky
+   }
+   if (!paramKey || typeof paramKey !== 'string') {
+       paramKey = '&amp;';
+   }
+   if (!pairKey || typeof pairKey !== 'string') {
+       pairKey = '=';
+   }
+   // when you do not explicitly tell the API...
+   if (arguments.length &lt; 5) {
+       // it will unescape parameter keys and values by default...
+       decode = true;
+   }
+
+   queryStart = url.indexOf('?');
+   if (queryStart &gt;= 0) {
+       // grab everything after the very first ? question mark...
+       query = url.substring(queryStart + 1);
+   } else {
+       // assume the input is already parameter data...
+       query = url;
+   }
+   // remove fragment identifiers...
+   fragStart = query.indexOf('#');
+   if (fragStart &gt;= 0) {
+       // remove everything after the first # hash mark...
+       query = query.substring(0, fragStart);
+   }
+   // make sure at this point we have enough material to do something useful...
+   if (query.indexOf(paramKey) &gt;= 0 || query.indexOf(pairKey) &gt;= 0) {
+       // we no longer need the whole query, so get the parameters...
+       query = query.split(paramKey);
+       result = {
+           names: [],
+           values: []
+       };
+       // loop through the parameters...
+       for (i = 0, len = query.length; i &lt; len; i = i + 1) {
+           pairKeyStart = query[i].indexOf(pairKey);
+           if (pairKeyStart &gt;= 0) {
+               name = query[i].substring(0, pairKeyStart);
+           } else {
+               name = query[i];
+           }
+           // only continue for non-empty names...
+           if (name) {
+               if (decode) {
+                   // unescape characters with special meaning like ? and #
+                   name = decodeURIComponent(name);
+               }
+               if (pairKeyStart &gt;= 0) {
+                   value = query[i].substring(pairKeyStart + 1);
+                   if (value) {
+                       if (decode) {
+                           value = decodeURIComponent(value);
+                       }
+                   } else {
+                       value = missingValue;
+                   }
+               } else {
+                   value = missingValue;
+               }
+               result.names.push(name);
+               result.values.push(value);
+           }
+       }
+       return result;
+   }
+</code></pre>
+
+<p>}</p>
+</tr></td><tr><td><p>This is very simple method to get parameter value(query string)</p>
+
+<p>Use <code>gV(para_name)</code> function to retrieve its value</p>
+
+<pre><code>var a=window.location.search;
+a=a.replace(a.charAt(0),""); //Removes '?'
+a=a.split("&amp;");
+
+function gV(x){
+ for(i=0;i&lt;a.length;i++){
+  var b=a[i].substr(0,a[i].indexOf("="));
+  if(x==b){
+   return a[i].substr(a[i].indexOf("=")+1,a[i].length)}
+</code></pre>
+</tr></td><tr><td><p>We've just released <a href="https://github.com/stretchr/arg.js" rel="noreferrer">arg.js</a>, a project aimed at solving this problem once and for all.  It's traditionally been so difficult but now you can do:</p>
+
+<pre><code>var name = Arg.get("name");
+</code></pre>
+
+<p>or getting the whole lot:</p>
+
+<pre><code>var params = Arg.all();
+</code></pre>
+
+<p>and if you care about the difference between <code>?query=true</code> and <code>#hash=true</code> then you can use the <code>Arg.query()</code> and <code>Arg.hash()</code> methods.</p>
+</tr></td><tr><td><p>If you have <a href="https://en.wikipedia.org/wiki/Underscore.js" rel="nofollow">Underscore.js</a> or <a href="http://lodash.com/docs#zipObject" rel="nofollow">lodash</a>, a quick and dirty way to get this done is:</p>
+
+<pre><code>_.object(window.location.search.slice(1).split('&amp;').map(function (val) { return val.split('='); }));
+</code></pre>
+</tr></td><tr><td><p>The shortest possible expression in terms of size to obtain a query object seems to be:</p>
+
+<pre><code>var params = {};
+location.search.substr(1).replace(/([^&amp;=]*)=([^&amp;]*)&amp;?/g,
+  function () { params[decodeURIComponent(arguments[1])] = decodeURIComponent(arguments[2]); });
+</code></pre>
+
+<p>You can make use of the <code>A</code> element to parse a URI from a string into its <code>location</code>-like components (to get rid of <code>#...</code>, for example):</p>
+
+<pre><code>var a = document.createElement('a');
+a.href = url;
+// Parse a.search.substr(1)... as above
+</code></pre>
+</tr></td><tr><td><p><strong>Get all querystring parameters including checkbox values (arrays).</strong></p>
+
+<p>Considering the correct &amp; normal use of GET parameters, the things I see it's missing, on most functions, is the support for arrays and removing the hash data.</p>
+
+<p>So I wrote this function:</p>
+
+<pre><code>function qs(a){
+ if(!a)return {};
+ a=a.split('#')[0].split('&amp;');
+ var b=a.length,c={},d,k,v;
+ while(b--){
+  d=a[b].split('=');
+  k=d[0].replace('[]',''),v=decodeURIComponent(d[1]||'');
+  c[k]?typeof c[k]==='string'?(c[k]=[v,c[k]]):(c[k].unshift(v)):c[k]=v;
+ }
+ return c
+}
+</code></pre>
+
+<p>Using shorthand operators &amp; while-- loop, the performance should be very good to.</p>
+
+<p><strong>Support:</strong></p>
+
+<ol>
+<li>Empty values (<em>key= / key</em>)</li>
+<li>Key value (<em>key=value</em>)</li>
+<li>Arrays (<em>key[]=value</em>)</li>
+<li>Hash (<em>the hash tag is split out</em>)</li>
+</ol>
+
+<p><strong>Notes:</strong></p>
+
+<p>It does not support object arrays (key[key]=value)</p>
+
+<p>If the space is + it remains a +.</p>
+
+<p>Add <code>.replace(/\+/g, " ")</code> if you need.</p>
+
+<p><strong>Usage:</strong></p>
+
+<pre><code>qs('array[]=1&amp;array[]=2&amp;key=value&amp;empty=&amp;empty2#hash')
+</code></pre>
+
+<p><strong>Return:</strong></p>
+
+<pre><code>{
+    "empty": "",
+    "key": "value",
+    "array": [
+        "1",
+        "2"
+    ]
+}
+</code></pre>
+
+<p><strong>Demo:</strong></p>
+
+<p><a href="http://jsfiddle.net/ZQMrt/1/" rel="nofollow">http://jsfiddle.net/ZQMrt/1/</a></p>
+
+<p><strong>Info</strong></p>
+
+<p>If you don't understand something or you can't read the function just ask. I'm happy to explain what I did here.</p>
+
+<p><em>If you think the function is unreadable and unmaintainable I'm happy to rewrite the function for you, but consider that shorthand &amp; bitwise operators are always faster than a standard syntax (maybe read about shorthands and bitwise operators in the ECMA-262 book or use your favorite search engine). Rewriting the code in a standard readable syntax means performance loss.</em></p>
+</tr></td><tr><td><p>This will work... You need to call this function where you need get the parameter by passing its name...</p>
+
+<pre><code>function getParameterByName(name)
+{
+  name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
+  var regexS = "[\\?&amp;]"+name+"=([^&amp;#]*)";
+  var regex = new RegExp( regexS );
+  var results = regex.exec( window.location.href );
+  alert(results[1]);
+  if (results == null)
+    return "";
+  else
+    return results[1];
+}
+</code></pre>
+</tr></td><tr><td><p>Quick, easy, and fast:</p>
+
+<p><strong>The function:</strong></p>
+
+<pre><code>function getUrlVar() {
+    var result = {};
+    var location = window.location.href.split('#');
+    var parts = location[0].replace(/[?&amp;]+([^=&amp;]+)=([^&amp;]*)/gi, function(m,key,value) {
+        result [key] = value;
+    });
+    return result;
+}
+</code></pre>
+
+<p><strong>Usage:</strong></p>
+
+<pre><code>var varRequest = getUrlVar()["theUrlVarName"];
+</code></pre>
+</tr></td><tr><td><p>For those who wants a short method (with limitations):</p>
+
+<pre><code>location.search.split('myParameter=')[1]
+</code></pre>
+</tr></td><tr><td><p>Here is <code>String</code> prototype implementation:</p>
+
+<pre><code>String.prototype.getParam = function( str ){
+    str = str.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
+    var regex = new RegExp( "[\\?&amp;]*"+str+"=([^&amp;#]*)" );    
+    var results = regex.exec( this );
+    if( results == null ){
+        return "";
+    } else {
+        return results[1];
+    }
+}
+</code></pre>
+
+<p>Example call:</p>
+
+<pre><code>var status = str.getParam("status")
+</code></pre>
+
+<p><code>str</code> can be a query string or url</p>
+</tr></td><tr><td><p>This didn't work for me, I want to match <code>?b</code> as the <code>b</code> parameter is present, and not match <code>?return</code> as the <code>r</code> parameter, here is <a href="https://gist.github.com/Dorian/833b37d2c7b168b7e94c" rel="nofollow">my solution</a>.</p>
+
+<pre><code>window.query_param = function(name) {
+  var param_value, params;
+
+  params = location.search.replace(/^\?/, '');
+  params = _.map(params.split('&amp;'), function(s) {
+    return s.split('=');
+  });
+
+  param_value = _.select(params, function(s) {
+    return s.first === name;
+  })[0];
+
+  if (param_value) {
+    return decodeURIComponent(param_value[1] || '');
+  } else {
+    return null;
+  }
+};
+</code></pre>
+</tr></td><tr><td><p>A simple solution with plain JavaScript and <a href="http://en.wikipedia.org/wiki/Regular_expression" rel="nofollow">regular expressions</a>:</p>
+
+<pre><code>alert(getQueryString("p2"));
+
+function getQueryString (Param) {
+    return decodeURI("http://www.example.com/?p1=p11&amp;p2=p2222".replace(new RegExp("^(?:.*[&amp;?]" + encodeURI(Param).replace(/[.+*]/g, "$&amp;") + "(?:=([^&amp;]*))?)?.*$", "i"), "$1"));
+}
+</code></pre>
+
+<p><a href="http://jsfiddle.net/QeLF3/" rel="nofollow">JsFiddle</a></p>
+</tr></td><tr><td><p>This will parse variables <strong>AND</strong> arrays from a URL string. It uses neither <em>regex</em> or any external library.</p>
+
+<pre><code>function url2json(url) {
+   var obj={};
+   function arr_vals(arr){
+      if (arr.indexOf(',') &gt; 1){
+         var vals = arr.slice(1, -1).split(',');
+         var arr = [];
+         for (var i = 0; i &lt; vals.length; i++)
+            arr[i]=vals[i];
+         return arr;
+      }
+      else
+         return arr.slice(1, -1);
+   }
+   function eval_var(avar){
+      if (!avar[1])
+          obj[avar[0]] = '';
+      else
+      if (avar[1].indexOf('[') == 0)
+         obj[avar[0]] = arr_vals(avar[1]);
+      else
+         obj[avar[0]] = avar[1];
+   }
+   if (url.indexOf('?') &gt; -1){
+      var params = url.split('?')[1];
+      if(params.indexOf('&amp;') &gt; 2){
+         var vars = params.split('&amp;');
+         for (var i in vars)
+            eval_var(vars[i].split('='));
+      }
+      else
+         eval_var(params.split('='));
+   }
+   return obj;
+}
+</code></pre>
+
+<p>Example:</p>
+
+<pre><code>var url = "http://www.x.com?luckyNums=[31,21,6]&amp;name=John&amp;favFoods=[pizza]&amp;noVal"
+console.log(url2json(url));
+</code></pre>
+
+<p>Output:</p>
+
+<pre><code>[object]
+   noVal: ""
+   favFoods: "pizza"
+   name:     "John"
+   luckyNums:
+      0: "31"
+      1: "21"
+      2: "6"
+</code></pre>
+</tr></td><tr><td><p>If you're using jQuery, you can use a library, such as <a href="http://benalman.com/projects/jquery-bbq-plugin/" rel="noreferrer">jQuery BBQ: Back Button &amp; Query Library</a>.</p>
+
+<blockquote>
+  <p>...jQuery BBQ provides a full <code>.deparam()</code> method, along with both hash state management, and fragment / query string parse and merge utility methods.</p>
+</blockquote>
+
+<p>Edit: Adding Deparam Example:</p>
+
+<p><div class="snippet" data-lang="js" data-hide="false" data-console="false" data-babel="false">
+<div class="snippet-code">
+<pre class="snippet-code-js lang-js prettyprint-override"><code> var DeparamExample = function() {
+            var params = $.deparam.querystring();
+
+            //nameofparam is the name of a param from url
+            //code below will get param if ajax refresh with hash
+            if (typeof params.nameofparam == 'undefined') {
+                params = jQuery.deparam.fragment(window.location.href);
+            }
+            
+            if (typeof params.nameofparam != 'undefined') {
+                var paramValue = params.nameofparam.toString();
+                  
+            }
+        };</code></pre>
+</div>
+</div>
+</p>
+
+<p>If you want to just use plain JavaScript, you could use...</p>
+
+<pre class="lang-js prettyprint-override"><code>var getParamValue = (function() {
+    var params;
+    var resetParams = function() {
+            var query = window.location.search;
+            var regex = /[?&amp;;](.+?)=([^&amp;;]+)/g;
+            var match;
+
+            params = {};
+
+            if (query) {
+                while (match = regex.exec(query)) {
+                    params[match[1]] = decodeURIComponent(match[2]);
+                }
+            }    
+        };
+
+    window.addEventListener
+    &amp;&amp; window.addEventListener('popstate', resetParams);
+
+    resetParams();
+
+    return function(param) {
+        return params.hasOwnProperty(param) ? params[param] : null;
+    }
+
+})();?
+</code></pre>
+
+<p>Because of the new HTML History API and specifically <code>history.pushState()</code> and <code>history.replaceState()</code>, the URL can change which will invalidate the cache of parameters and their values.</p>
+
+<p>This version will update its internal cache of parameters each time the history changes.</p>
+</tr></td><tr><td><p><strong>Update: Sep-2018</strong></p>
+<p>You can use <a href="https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams#Browser_compatibility" rel="noreferrer">URLSearchParams</a> which is simple and has <a href="https://caniuse.com/#feat=urlsearchparams" rel="noreferrer">decent (but not complete) browser support</a>.</p>
+<pre><code>const urlParams = new URLSearchParams(window.location.search);
+const myParam = urlParams.get('myParam');
+</code></pre>
+<p><strong>PS</strong></p>
+<p>Unfortunately URLSearchParams don't properly parse query strings with string keyed values.
+You might want to try <a href="https://locutus.io/php/parse_str/" rel="noreferrer">locutus/parse_str</a></p>
+<pre class="lang-js prettyprint-override"><code>console.log(new URLSearchParams('a=b&amp;c=d').toString()); // a=b&amp;c=d
+console.log(new URLSearchParams('a=b&amp;c=d').get('a')); // b
+console.log(new URLSearchParams('filters[a]=b&amp;filters[c]=d').toString()); // filters%5Ba%5D=b&amp;filters%5Bc%5D=d
+console.log(new URLSearchParams('filters[a]=b&amp;filters[c]=d').get('filters')); // null
+</code></pre>
+<p><strong>Original</strong></p>
+<p>You don't need jQuery for that purpose. You can use just some pure JavaScript:</p>
+<pre><code>function getParameterByName(name, url) {
+    if (!url) url = window.location.href;
+    name = name.replace(/[\[\]]/g, '\\$&amp;');
+    var regex = new RegExp('[?&amp;]' + name + '(=([^&amp;#]*)|&amp;|#|$)'),
+        results = regex.exec(url);
+    if (!results) return null;
+    if (!results[2]) return '';
+    return decodeURIComponent(results[2].replace(/\+/g, ' '));
+}
+</code></pre>
+<p><strong>Usage:</strong></p>
+<pre><code>// query string: ?foo=lorem&amp;bar=&amp;baz
+var foo = getParameterByName('foo'); // &quot;lorem&quot;
+var bar = getParameterByName('bar'); // &quot;&quot; (present with empty value)
+var baz = getParameterByName('baz'); // &quot;&quot; (present with no value)
+var qux = getParameterByName('qux'); // null (absent)
+</code></pre>
+<br>
+Note: If a parameter is present several times (`?foo=lorem&foo=ipsum`), you will get the first value (`lorem`). There is no standard about this and usages vary, see for example this question: [Authoritative position of duplicate HTTP GET query keys](https://stackoverflow.com/questions/1746507/authoritative-position-of-duplicate-http-get-query-keys).  
+NOTE: The function is case-sensitive. If you prefer case-insensitive parameter name, [add 'i' modifier to RegExp][2]
+<hr />
+<p>This is an update based on the new <a href="https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams" rel="noreferrer">URLSearchParams specs</a> to achieve the same result more succinctly. See answer titled &quot;<a href="https://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript/901144#12151322">URLSearchParams</a>&quot; below.</p>
+</tr></td><tr><td><p>Roshambo on snipplr.com has a simple script to achieve this described in <em><a href="http://snipplr.com/view/26662/get-url-parameters-with-jquery--improved/" rel="noreferrer">Get URL Parameters with jQuery | Improved</a></em>. With his script you also easily get to pull out just the parameters you want.</p>
+
+<p>Here's the gist:</p>
+
+<pre><code>$.urlParam = function(name, url) {
+    if (!url) {
+     url = window.location.href;
+    }
+    var results = new RegExp('[\\?&amp;]' + name + '=([^&amp;#]*)').exec(url);
+    if (!results) { 
+        return undefined;
+    }
+    return results[1] || undefined;
+}
+</code></pre>
+
+<p>Then just get your parameters from the query string.</p>
+
+<p>So if the URL/query string was <code>xyz.com/index.html?lang=de</code>.</p>
+
+<p>Just call <code>var langval = $.urlParam('lang');</code>, and you've got it.</p>
+
+<p>UZBEKJON has a great blog post on this as well, <em><a href="http://jquery-howto.blogspot.com/2009/09/get-url-parameters-values-with-jquery.html" rel="noreferrer">Get URL parameters &amp; values with jQuery</a></em>.</p>
+</tr></td><tr><td><p>Some of the solutions posted here are inefficient. Repeating the regular expression search every time the script needs to access a parameter is completely unnecessary, one single function to split up the parameters into an associative-array style object is enough. If you're not working with the HTML 5 History API, this is only necessary once per page load.  The other suggestions here also fail to decode the URL correctly.</p>
+
+<pre><code>var urlParams;
+(window.<a href="https://developer.mozilla.org/en-US/docs/DOM/window.onpopstate" rel="noreferrer">onpopstate</a> = function () {
+    var match,
+        pl     = /\+/g,  // Regex for replacing addition symbol with a space
+        search = /([^&=]+)=?([^&]*)/g,
+        decode = function (s) { return <a href="https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/decodeURIComponent" rel="noreferrer">decodeURIComponent</a>(s.replace(pl, " ")); },
+        query  = window.<a href="https://developer.mozilla.org/en-US/docs/DOM/window.location" rel="noreferrer">location</a>.search.<a href="https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/String/substring" rel="noreferrer">substring</a>(1);
+
+    urlParams = {};
+    while (match = search.<a href="https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/RegExp/exec" rel="noreferrer">exec</a>(query))
+       urlParams[decode(match[1])] = decode(match[2]);
+})();</code></pre>
+
+<p>Example querystring: </p>
+
+<blockquote>
+  <p><code>?i=main&amp;mode=front&amp;sid=de8d49b78a85a322c4155015fdce22c4&amp;enc=+Hello%20&amp;empty</code></p>
+</blockquote>
+
+<p>Result:</p>
+
+<pre class="lang-js prettyprint-override"><code> urlParams = {
+    enc: " Hello ",
+    i: "main",
+    mode: "front",
+    sid: "de8d49b78a85a322c4155015fdce22c4",
+    empty: ""
+}
+
+alert(urlParams["mode"]);
+// -&gt; "front"
+
+alert("empty" in urlParams);
+// -&gt; true
+</code></pre>
+
+<p>This could easily be improved upon to handle array-style query strings too.  An example of this is <a href="http://jsbin.com/adali3/2" rel="noreferrer">here</a>, but since array-style parameters aren't defined in <a href="http://tools.ietf.org/html/rfc3986" rel="noreferrer">RFC 3986</a> I won't pollute this answer with the source code. <a href="https://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript/23401756#23401756">For those interested in a "polluted" version, look at campbeln's answer below</a>.</p>
+
+<p>Also, as pointed out in the comments, <code>;</code> is a legal delimiter for <code>key=value</code> pairs.  It would require a more complicated regex to handle <code>;</code> or <code>&amp;</code>, which I think is unnecessary because it's rare that <code>;</code> is used and I would say even more unlikely that both would be used.  If you need to support <code>;</code> instead of <code>&amp;</code>, just swap them in the regex.</p>
+
+<p><hr /> 
+If you're using a server-side preprocessing language, you might want to use its native JSON functions to do the heavy lifting for you.  For example, in PHP you can write:</p>
+
+<pre><code>&lt;script>var urlParams = &lt;?php echo <a href="http://php.net/manual/en/function.json-encode.php" rel="noreferrer">json_encode</a>($_GET, JSON_HEX_TAG);?>;&lt;/script></code></pre>
+
+<p>Much simpler!</p>
+
+<h1>UPDATED</h1>
+
+<blockquote>
+  <p>A new capability would be to retrieve repeated params as following <code>myparam=1&amp;myparam=2</code>. There is not a <em>specification</em>, however, most of the current approaches follow the generation of an array.</p>
+</blockquote>
+
+<pre><code>myparam = ["1", "2"]
+</code></pre>
+
+<p>So, this is the approach to manage it:</p>
+
+<pre><code>let urlParams = {};
+(window.onpopstate = function () {
+    let match,
+        pl = /\+/g,  // Regex for replacing addition symbol with a space
+        search = /([^&amp;=]+)=?([^&amp;]*)/g,
+        decode = function (s) {
+            return decodeURIComponent(s.replace(pl, " "));
+        },
+        query = window.location.search.substring(1);
+
+    while (match = search.exec(query)) {
+        if (decode(match[1]) in urlParams) {
+            if (!Array.isArray(urlParams[decode(match[1])])) {
+                urlParams[decode(match[1])] = [urlParams[decode(match[1])]];
+            }
+            urlParams[decode(match[1])].push(decode(match[2]));
+        } else {
+            urlParams[decode(match[1])] = decode(match[2]);
+        }
+    }
+})();
+</code></pre>
+</tr></td><tr><td><pre><code>function GET() {
+        var data = [];
+        for(x = 0; x &lt; arguments.length; ++x)
+            data.push(location.href.match(new RegExp("/\?".concat(arguments[x],"=","([^\n&amp;]*)")))[1])
+                return data;
+    }
+
+
+example:
+data = GET("id","name","foo");
+query string : ?id=3&amp;name=jet&amp;foo=b
+returns:
+    data[0] // 3
+    data[1] // jet
+    data[2] // b
+or
+    alert(GET("id")[0]) // return 3
+</code></pre>
+</tr></td><tr><td><h1>ES2015 (ES6)</h1>
+<pre><code>getQueryStringParams = query =&gt; {
+    return query
+        ? (/^[?#]/.test(query) ? query.slice(1) : query)
+            .split('&amp;')
+            .reduce((params, param) =&gt; {
+                    let [key, value] = param.split('=');
+                    params[key] = value ? decodeURIComponent(value.replace(/\+/g, ' ')) : '';
+                    return params;
+                }, {}
+            )
+        : {}
+};
+</code></pre>
+<hr />
+<h2>Without jQuery</h2>
+<pre><code>var qs = (function(a) {
+    if (a == &quot;&quot;) return {};
+    var b = {};
+    for (var i = 0; i &lt; a.length; ++i)
+    {
+        var p=a[i].split('=', 2);
+        if (p.length == 1)
+            b[p[0]] = &quot;&quot;;
+        else
+            b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, &quot; &quot;));
+    }
+    return b;
+})(window.location.search.substr(1).split('&amp;'));
+</code></pre>
+<p>With an URL like <code>?topic=123&amp;name=query+string</code>, the following will return:</p>
+<pre><code>qs[&quot;topic&quot;];    // 123
+qs[&quot;name&quot;];     // query string
+qs[&quot;nothere&quot;];  // undefined (object)
+</code></pre>
+<hr />
+<h2>Google method</h2>
+<p>Tearing Google's code I found the method they use: <code>getUrlParameters</code></p>
+<pre><code>function (b) {
+    var c = typeof b === &quot;undefined&quot;;
+    if (a !== h &amp;&amp; c) return a;
+    for (var d = {}, b = b || k[B][vb], e = b[p](&quot;?&quot;), f = b[p](&quot;#&quot;), b = (f === -1 ? b[Ya](e + 1) : [b[Ya](e + 1, f - e - 1), &quot;&amp;&quot;, b[Ya](f + 1)][K](&quot;&quot;))[z](&quot;&amp;&quot;), e = i.dd ? ia : unescape, f = 0, g = b[w]; f &lt; g; ++f) {
+        var l = b[f][p](&quot;=&quot;);
+        if (l !== -1) {
+            var q = b[f][I](0, l),
+                l = b[f][I](l + 1),
+                l = l[Ca](/\+/g, &quot; &quot;);
+            try {
+                d[q] = e(l)
+            } catch (A) {}
+        }
+    }
+    c &amp;&amp; (a = d);
+    return d
+}
+</code></pre>
+<p>It is obfuscated, but it is understandable. It does not work because some variables are undefined.</p>
+<p>They start to look for parameters on the url from <code>?</code> and also from the hash <code>#</code>. Then for each parameter they split in the equal sign <code>b[f][p](&quot;=&quot;)</code> (which looks like <code>indexOf</code>, they use the position of the char to get the key/value). Having it split they check whether the parameter has a value or not, if it has then they store the value of <code>d</code>, otherwise they just continue.</p>
+<p>In the end the object <code>d</code> is returned, handling escaping and the <code>+</code> sign. This object is just like mine, it has the same behavior.</p>
+<hr />
+<p>My method as a <strong>jQuery plugin</strong></p>
+<pre><code>(function($) {
+    $.QueryString = (function(paramsArray) {
+        let params = {};
+
+        for (let i = 0; i &lt; paramsArray.length; ++i)
+        {
+            let param = paramsArray[i]
+                .split('=', 2);
+            
+            if (param.length !== 2)
+                continue;
+            
+            params[param[0]] = decodeURIComponent(param[1].replace(/\+/g, &quot; &quot;));
+        }
+            
+        return params;
+    })(window.location.search.substr(1).split('&amp;'))
+})(jQuery);
+</code></pre>
+<p>Usage</p>
+<pre><code>//Get a param
+$.QueryString.param
+//-or-
+$.QueryString[&quot;param&quot;]
+//This outputs something like...
+//&quot;val&quot;
+
+//Get all params as object
+$.QueryString
+//This outputs something like...
+//Object { param: &quot;val&quot;, param2: &quot;val&quot; }
+
+//Set a param (only in the $.QueryString object, doesn't affect the browser's querystring)
+$.QueryString.param = &quot;newvalue&quot;
+//This doesn't output anything, it just updates the $.QueryString object
+
+//Convert object into string suitable for url a querystring (Requires jQuery)
+$.param($.QueryString)
+//This outputs something like...
+//&quot;param=newvalue&amp;param2=val&quot;
+
+//Update the url/querystring in the browser's location bar with the $.QueryString object
+history.replaceState({}, '', &quot;?&quot; + $.param($.QueryString));
+//-or-
+history.pushState({}, '', &quot;?&quot; + $.param($.QueryString));
+</code></pre>
+<hr />
+<h2><a href="http://jsperf.com/querystring-with-javascript" rel="noreferrer">Performance test (split method against regex method)</a> (<a href="http://jsperf.com/" rel="noreferrer">jsPerf</a>)</h2>
+<p>Preparation code: methods declaration</p>
+<h3>Split test code</h3>
+<pre><code>var qs = window.GetQueryString(query);
+
+var search = qs[&quot;q&quot;];
+var value = qs[&quot;value&quot;];
+var undef = qs[&quot;undefinedstring&quot;];
+</code></pre>
+<h3>Regex test code</h3>
+<pre><code>var search = window.getParameterByName(&quot;q&quot;);
+var value = window.getParameterByName(&quot;value&quot;);
+var undef = window.getParameterByName(&quot;undefinedstring&quot;);
+</code></pre>
+<p><strong>Testing in Firefox 4.0 x86 on Windows Server 2008 R2 / 7 x64</strong></p>
+<ul>
+<li><strong>Split method</strong>: 144,780 ±2.17% fastest</li>
+<li><strong>Regex method</strong>: 13,891 ±0.85% | 90% slower</li>
+</ul>
+</tr></td><tr><td><p>Here's my stab at making Andy E's excellent solution into a full fledged jQuery plugin:</p>
+
+<pre><code>;(function ($) {
+    $.extend({      
+        getQueryString: function (name) {           
+            function parseParams() {
+                var params = {},
+                    e,
+                    a = /\+/g,  // Regex for replacing addition symbol with a space
+                    r = /([^&amp;=]+)=?([^&amp;]*)/g,
+                    d = function (s) { return decodeURIComponent(s.replace(a, " ")); },
+                    q = window.location.search.substring(1);
+
+                while (e = r.exec(q))
+                    params[d(e[1])] = d(e[2]);
+
+                return params;
+            }
+
+            if (!this.queryStringParams)
+                this.queryStringParams = parseParams(); 
+
+            return this.queryStringParams[name];
+        }
+    });
+})(jQuery);
+</code></pre>
+
+<p>The syntax is:</p>
+
+<pre><code>var someVar = $.getQueryString('myParam');
+</code></pre>
+
+<p>Best of both worlds!</p>
+</tr></td><tr><td><p>Here is <a href="https://github.com/voituk/Misc/blob/master/js/jquery.hash.js#L10" rel="noreferrer">my version of query string parsing code on GitHub</a>.</p>
+
+<p>It's "prefixed" with jquery.*, but the parsing function itself don't use jQuery. It's pretty fast, but still open for few simple performance optimizations.</p>
+
+<p>Also it supports list &amp; hash-tables encoding in the URL, like:</p>
+
+<pre><code>arr[]=10&amp;arr[]=20&amp;arr[]=100
+</code></pre>
+
+<p>or</p>
+
+<pre><code>hash[key1]=hello&amp;hash[key2]=moto&amp;a=How%20are%20you
+</code></pre>
+
+<hr>
+
+<pre><code>jQuery.toQueryParams = function(str, separator) {
+    separator = separator || '&amp;'
+    var obj = {}
+    if (str.length == 0)
+        return obj
+    var c = str.substr(0,1)
+    var s = c=='?' || c=='#'  ? str.substr(1) : str; 
+
+    var a = s.split(separator)
+    for (var i=0; i&lt;a.length; i++) {
+        var p = a[i].indexOf('=')
+        if (p &lt; 0) {
+            obj[a[i]] = ''
+            continue
+        }
+        var k = decodeURIComponent(a[i].substr(0,p)),
+            v = decodeURIComponent(a[i].substr(p+1))
+
+        var bps = k.indexOf('[')
+        if (bps &lt; 0) {
+            obj[k] = v
+            continue;
+        } 
+
+        var bpe = k.substr(bps+1).indexOf(']')
+        if (bpe &lt; 0) {
+            obj[k] = v
+            continue;
+        }
+
+        var bpv = k.substr(bps+1, bps+bpe-1)
+        var k = k.substr(0,bps)
+        if (bpv.length &lt;= 0) {
+            if (typeof(obj[k]) != 'object') obj[k] = []
+            obj[k].push(v)
+        } else {
+            if (typeof(obj[k]) != 'object') obj[k] = {}
+            obj[k][bpv] = v
+        }
+    }
+    return obj;
+
+}
+</code></pre>
+</tr></td><tr><td><p>Code golf:</p>
+
+<pre><code>var a = location.search&amp;&amp;location.search.substr(1).replace(/\+/gi," ").split("&amp;");
+for (var i in a) {
+    var s = a[i].split("=");
+    a[i]  = a[unescape(s[0])] = unescape(s[1]);
+}
+</code></pre>
+
+<p>Display it!</p>
+
+<pre><code>for (i in a) {
+    document.write(i + ":" + a[i] + "&lt;br/&gt;");   
+};
+</code></pre>
+
+<p>On my Mac: <code>test.htm?i=can&amp;has=cheezburger</code> displays</p>
+
+<pre><code>0:can
+1:cheezburger
+i:can
+has:cheezburger
+</code></pre>
+</tr></td><tr><td><p>Roshambo jQuery method wasn't taking care of decode URL</p>
+
+<blockquote>
+  <p><a href="http://snipplr.com/view/26662/get-url-parameters-with-jquery--improved/" rel="noreferrer">http://snipplr.com/view/26662/get-url-parameters-with-jquery--improved/</a></p>
+</blockquote>
+
+<p>Just added that capability also while adding in  the return statement </p>
+
+<pre><code>return decodeURIComponent(results[1].replace(/\+/g, " ")) || 0;
+</code></pre>
+
+<p>Now you can find the updated gist:</p>
+
+<pre><code>$.urlParam = function(name){
+var results = new RegExp('[\\?&amp;]' + name + '=([^&amp;#]*)').exec(window.location.href);
+if (!results) { return 0; }
+return decodeURIComponent(results[1].replace(/\+/g, " ")) || 0;
+}
+</code></pre>
+</tr></td><tr><td><p>This is a function I created a while back and I'm quite happy with. It is not case sensitive - which is handy. Also, if the requested QS doesn't exist, it just returns an empty string.</p>
+
+<p>I use a compressed version of this. I'm posting uncompressed for the novice types to better explain what's going on.</p>
+
+<p>I'm sure this could be optimized or done differently to work faster, but it's always worked great for what I need.</p>
+
+<p>Enjoy.</p>
+
+<pre><code>function getQSP(sName, sURL) {
+    var theItmToRtn = "";
+    var theSrchStrg = location.search;
+    if (sURL) theSrchStrg = sURL;
+    var sOrig = theSrchStrg;
+    theSrchStrg = theSrchStrg.toUpperCase();
+    sName = sName.toUpperCase();
+    theSrchStrg = theSrchStrg.replace("?", "&amp;") theSrchStrg = theSrchStrg + "&amp;";
+    var theSrchToken = "&amp;" + sName + "=";
+    if (theSrchStrg.indexOf(theSrchToken) != -1) {
+        var theSrchTokenLth = theSrchToken.length;
+        var theSrchTokenLocStart = theSrchStrg.indexOf(theSrchToken) + theSrchTokenLth;
+        var theLocOfNextAndSign = theSrchStrg.indexOf("&amp;", theSrchTokenLocStart);
+        theItmToRtn = unescape(sOrig.substring(theSrchTokenLocStart, theLocOfNextAndSign));
+    }
+    return unescape(theItmToRtn);
+}
+</code></pre>
+</tr></td><tr><td><p>Improved version of <a href="https://stackoverflow.com/questions/901115/get-querystring-values-with-jquery/901144#901144">Artem Barger's answer</a>:</p>
+
+<pre><code>function getParameterByName(name) {
+    var match = RegExp('[?&amp;]' + name + '=([^&amp;]*)').exec(window.location.search);
+    return match &amp;&amp; decodeURIComponent(match[1].replace(/\+/g, ' '));
+}
+</code></pre>
+
+<p>For more information on improvement see: <a href="http://james.padolsey.com/javascript/bujs-1-getparameterbyname/" rel="noreferrer">http://james.padolsey.com/javascript/bujs-1-getparameterbyname/</a></p>
+</tr></td><tr><td><p>I use regular expressions a lot, but not for that.</p>
+
+<p>It seems easier and more efficient to me to read the query string once in my application, and build an object from all the key/value pairs like:</p>
+
+<pre><code>var search = function() {
+  var s = window.location.search.substr(1),
+    p = s.split(/\&amp;/), l = p.length, kv, r = {};
+  if (l === 0) {return false;}
+  while (l--) {
+    kv = p[l].split(/\=/);
+    r[kv[0]] = decodeURIComponent(kv[1] || '') || true;
+  }
+  return r;
+}();
+</code></pre>
+
+<p>For a URL like <code>http://domain.com?param1=val1&amp;param2=val2</code> you can get their value later in your code as <code>search.param1</code> and <code>search.param2</code>.</p>
+</tr></td><tr><td><p>Just another recommendation. The plugin <em><a href="https://github.com/allmarkedup/jQuery-URL-Parser">Purl</a></em> allows to retrieve all parts of URL, including anchor, host, etc.</p>
+
+<p>It can be used with or without jQuery.</p>
+
+<p>Usage is very simple and cool:</p>
+
+<pre><code>var url = $.url('http://allmarkedup.com/folder/dir/index.html?item=value'); // jQuery version
+var url = purl('http://allmarkedup.com/folder/dir/index.html?item=value'); // plain JS version
+url.attr('protocol'); // returns 'http'
+url.attr('path'); // returns '/folder/dir/index.html'
+</code></pre>
+
+<p>However, as of Nov 11, 2014, Purl is no longer maintained and the author recommends using <a href="https://github.com/medialize/URI.js">URI.js</a> instead.  The jQuery plugin is different in that it focuses on elements - for usage with strings, just use <code>URI</code> directly, with or without jQuery.  Similar code would look as such, fuller docs <a href="http://medialize.github.io/URI.js/docs.html">here</a>:</p>
+
+<pre><code>var url = new URI('http://allmarkedup.com/folder/dir/index.html?item=value'); // plain JS version
+url.protocol(); // returns 'http'
+url.path(); // returns '/folder/dir/index.html'
+</code></pre>
+</tr></td><tr><td><p>Here's my edit to <a href="https://stackoverflow.com/questions/901115/get-query-string-values-in-javascript/3855394#3855394">this excellent answer</a> - with added ability to parse query strings with keys without values.</p>
+
+<pre><code>var url = 'http://sb.com/reg/step1?param';
+var qs = (function(a) {
+    if (a == "") return {};
+    var b = {};
+    for (var i = 0; i &lt; a.length; ++i) {
+        var p=a[i].split('=', 2);
+        if (p[1]) p[1] = decodeURIComponent(p[1].replace(/\+/g, " "));
+        b[p[0]] = p[1];
+    }
+    return b;
+})((url.split('?'))[1].split('&amp;'));
+</code></pre>
+
+<p><b>IMPORTANT!</b> The parameter for that function in the last line is different. It's just an example of how one can pass an arbitrary URL to it. You can use last line from Bruno's answer to parse the current URL.</p>
+
+<p>So what exactly changed? With url <code>http://sb.com/reg/step1?param=</code> results will be same. But with url <code>http://sb.com/reg/step1?param</code> Bruno's solution returns an object without keys, while mine returns an object with key <code>param</code> and <code>undefined</code> value.</p>
+</tr></td><tr><td><p>I would rather use <code>split()</code> instead of Regex for this operation:</p>
+
+<pre><code>function getUrlParams() {
+    var result = {};
+    var params = (window.location.search.split('?')[1] || '').split('&amp;');
+    for(var param in params) {
+        if (params.hasOwnProperty(param)) {
+            var paramParts = params[param].split('=');
+            result[paramParts[0]] = decodeURIComponent(paramParts[1] || "");
+        }
+    }
+    return result;
+}
+</code></pre>
+</tr></td><tr><td><p>I took <a href="https://stackoverflow.com/questions/901115/get-querystring-values-in-javascript/3855394#3855394">this answer</a> and added support for optionally passing the URL in as a parameter; falls back to window.location.search. Obviously this is useful for getting the query string parameters from URLs that are not the current page:</p>
+
+<pre><code>(function($, undef) {
+  $.QueryString = function(url) {
+    var pairs, qs = null, index, map = {};
+    if(url == undef){
+      qs = window.location.search.substr(1);
+    }else{
+      index = url.indexOf('?');
+      if(index == -1) return {};
+      qs = url.substring(index+1);
+    }
+    pairs = qs.split('&amp;');
+    if (pairs == "") return {};
+    for (var i = 0; i &lt; pairs.length; ++i)
+    {
+      var p = pairs[i].split('=');
+      if(p.length != 2) continue;
+      map[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "));
+    }
+    return map;
+  };
+})(jQuery);
+</code></pre>
+</tr></td><tr><td><p>This function will return a parsed JavaScript object with any arbitrarily nested values using recursion as necessary.</p>
+
+<p>Here's a <a href="http://jsfiddle.net/WZHm5/3/" rel="nofollow">jsfiddle</a> example.</p>
+
+<pre><code>[
+  '?a=a',
+  '&amp;b=a',
+  '&amp;b=b',
+  '&amp;c[]=a',
+  '&amp;c[]=b',
+  '&amp;d[a]=a',
+  '&amp;d[a]=x',
+  '&amp;e[a][]=a',
+  '&amp;e[a][]=b',
+  '&amp;f[a][b]=a',
+  '&amp;f[a][b]=x',
+  '&amp;g[a][b][]=a',
+  '&amp;g[a][b][]=b',
+  '&amp;h=%2B+%25',
+  '&amp;i[aa=b',
+  '&amp;i[]=b',
+  '&amp;j=',
+  '&amp;k',
+  '&amp;=l',
+  '&amp;abc=foo',
+  '&amp;def=%5Basf%5D',
+  '&amp;ghi=[j%3Dkl]',
+  '&amp;xy%3Dz=5',
+  '&amp;foo=b%3Dar',
+  '&amp;xy%5Bz=5'
+].join('');
+</code></pre>
+
+<p>Given any of the above test examples.</p>
+
+<pre><code>var qs = function(a) {
+  var b, c, e;
+  b = {};
+  c = function(d) {
+    return d &amp;&amp; decodeURIComponent(d.replace(/\+/g, " "));
+  };
+  e = function(f, g, h) {
+    var i, j, k, l;
+    h = h ? h : null;
+    i = /(.+?)\[(.+?)?\](.+)?/g.exec(g);
+    if (i) {
+      [j, k, l] = [i[1], i[2], i[3]]
+      if (k === void 0) {
+        if (f[j] === void 0) {
+          f[j] = [];
+        }
+        f[j].push(h);
+      } else {
+        if (typeof f[j] !== "object") {
+          f[j] = {};
+        }
+        if (l) {
+          e(f[j], k + l, h);
+        } else {
+          e(f[j], k, h);
+        }
+      }
+    } else {
+      if (f.hasOwnProperty(g)) {
+        if (Array.isArray(f[g])) {
+          f[g].push(h);
+        } else {
+          f[g] = [].concat.apply([f[g]], [h]);
+        }
+      } else {
+        f[g] = h;
+      }
+      return f[g];
+    }
+  };
+  a.replace(/^(\?|#)/, "").replace(/([^#&amp;=?]+)?=?([^&amp;=]+)?/g, function(m, n, o) {
+    n &amp;&amp; e(b, c(n), c(o));
+  });
+  return b;
+};
+</code></pre>
+</tr></td><tr><td><pre><code>// Parse query string
+var params = {}, queryString = location.hash.substring(1),
+    regex = /([^&amp;=]+)=([^&amp;]*)/g,
+    m;
+while (m = regex.exec(queryString)) {
+    params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
+}
+</code></pre>
+</tr></td><tr><td><p>Here's an extended version of Andy E's linked "Handle array-style query strings"-version. Fixed a bug (<code>?key=1&amp;key[]=2&amp;key[]=3</code>; <code>1</code> is lost and replaced with <code>[2,3]</code>), made a few minor performance improvements (re-decoding of values, recalculating "[" position, etc.) and added a number of improvements (functionalized, support for <code>?key=1&amp;key=2</code>, support for <code>;</code> delimiters). I left the variables annoyingly short, but added comments galore to make them readable (oh, and I reused <code>v</code> within the local functions, sorry if that is confusing ;).</p>
+
+<p>It will handle the following querystring...</p>
+
+<blockquote>
+  <p>?test=Hello&amp;person=neek&amp;person[]=jeff&amp;person[]=jim&amp;person[extra]=john&amp;test3&amp;nocache=1398914891264</p>
+</blockquote>
+
+<p>...making it into an object that looks like...</p>
+
+<pre><code>{
+    "test": "Hello",
+    "person": {
+        "0": "neek",
+        "1": "jeff",
+        "2": "jim",
+        "length": 3,
+        "extra": "john"
+    },
+    "test3": "",
+    "nocache": "1398914891264"
+}
+</code></pre>
+
+<p>As you can see above, this version handles some measure of "malformed" arrays, i.e. - <code>person=neek&amp;person[]=jeff&amp;person[]=jim</code> or <code>person=neek&amp;person=jeff&amp;person=jim</code> as the key is identifiable and valid (at least in dotNet's <a href="http://msdn.microsoft.com/en-us/library/xsc9a449.aspx" rel="noreferrer">NameValueCollection.Add</a>):</p>
+
+<blockquote>
+  <p>If the specified key already exists in the target NameValueCollection
+  instance, the specified value is added to the existing comma-separated
+  list of values in the form "value1,value2,value3".</p>
+</blockquote>
+
+<p>It seems <a href="https://stackoverflow.com/questions/1746507/authoritative-position-of-duplicate-http-get-query-keys">the jury is somewhat out</a> on repeated keys as there is no spec. In this case, multiple keys are stored as an (fake)array. But do note that I <strong>do not</strong> process values based on commas into arrays.</p>
+
+<p><strong>The code:</strong></p>
+
+<pre><code>getQueryStringKey = function(key) {
+    return getQueryStringAsObject()[key];
+};
+
+
+getQueryStringAsObject = function() {
+    var b, cv, e, k, ma, sk, v, r = {},
+        d = function (v) { return decodeURIComponent(v).replace(/\+/g, " "); }, //# d(ecode) the v(alue)
+        q = window.location.search.substring(1), //# suggested: q = decodeURIComponent(window.location.search.substring(1)),
+        s = /([^&amp;;=]+)=?([^&amp;;]*)/g //# original regex that does not allow for ; as a delimiter:   /([^&amp;=]+)=?([^&amp;]*)/g
+    ;
+
+    //# ma(make array) out of the v(alue)
+    ma = function(v) {
+        //# If the passed v(alue) hasn't been setup as an object
+        if (typeof v != "object") {
+            //# Grab the cv(current value) then setup the v(alue) as an object
+            cv = v;
+            v = {};
+            v.length = 0;
+
+            //# If there was a cv(current value), .push it into the new v(alue)'s array
+            //#     NOTE: This may or may not be 100% logical to do... but it's better than loosing the original value
+            if (cv) { Array.prototype.push.call(v, cv); }
+        }
+        return v;
+    };
+
+    //# While we still have key-value e(ntries) from the q(uerystring) via the s(earch regex)...
+    while (e = s.exec(q)) { //# while((e = s.exec(q)) !== null) {
+        //# Collect the open b(racket) location (if any) then set the d(ecoded) v(alue) from the above split key-value e(ntry) 
+        b = e[1].indexOf("[");
+        v = d(e[2]);
+
+        //# As long as this is NOT a hash[]-style key-value e(ntry)
+        if (b &lt; 0) { //# b == "-1"
+            //# d(ecode) the simple k(ey)
+            k = d(e[1]);
+
+            //# If the k(ey) already exists
+            if (r[k]) {
+                //# ma(make array) out of the k(ey) then .push the v(alue) into the k(ey)'s array in the r(eturn value)
+                r[k] = ma(r[k]);
+                Array.prototype.push.call(r[k], v);
+            }
+            //# Else this is a new k(ey), so just add the k(ey)/v(alue) into the r(eturn value)
+            else {
+                r[k] = v;
+            }
+        }
+        //# Else we've got ourselves a hash[]-style key-value e(ntry) 
+        else {
+            //# Collect the d(ecoded) k(ey) and the d(ecoded) sk(sub-key) based on the b(racket) locations
+            k = d(e[1].slice(0, b));
+            sk = d(e[1].slice(b + 1, e[1].indexOf("]", b)));
+
+            //# ma(make array) out of the k(ey) 
+            r[k] = ma(r[k]);
+
+            //# If we have a sk(sub-key), plug the v(alue) into it
+            if (sk) { r[k][sk] = v; }
+            //# Else .push the v(alue) into the k(ey)'s array
+            else { Array.prototype.push.call(r[k], v); }
+        }
+    }
+
+    //# Return the r(eturn value)
+    return r;
+};
+</code></pre>
+</tr></td><tr><td><p>Here's what I'm using:</p>
+
+<pre><code>/**
+ * Examples:
+ * getUrlParams()['myparam']    // url defaults to the current page
+ * getUrlParams(url)['myparam'] // url can be just a query string
+ *
+ * Results of calling `getUrlParams(url)['myparam']` with various urls:
+ * example.com                               (undefined)
+ * example.com?                              (undefined)
+ * example.com?myparam                       (empty string)
+ * example.com?myparam=                      (empty string)
+ * example.com?myparam=0                     (the string '0')
+ * example.com?myparam=0&amp;myparam=override    (the string 'override')
+ *
+ * Origin: http://stackoverflow.com/a/23946023/2407309
+ */
+function getUrlParams (url) {
+    var urlParams = {} // return value
+    var queryString = getQueryString()
+    if (queryString) {
+        var keyValuePairs = queryString.split('&amp;')
+        for (var i = 0; i &lt; keyValuePairs.length; i++) {
+            var keyValuePair = keyValuePairs[i].split('=')
+            var paramName = keyValuePair[0]
+            var paramValue = keyValuePair[1] || ''
+            urlParams[paramName] = decodeURIComponent(paramValue.replace(/\+/g, ' '))
+        }
+    }
+    return urlParams // functions below
+    function getQueryString () {
+        var reducedUrl = url || window.location.search
+        reducedUrl = reducedUrl.split('#')[0] // Discard fragment identifier.
+        var queryString = reducedUrl.split('?')[1]
+        if (!queryString) {
+            if (reducedUrl.search('=') !== false) { // URL is a query string.
+                queryString = reducedUrl
+            }
+        }
+        return queryString
+    } // getQueryString
+} // getUrlParams
+</code></pre>
+
+<p>Returning 'override' rather than '0' in the last case makes it consistent with PHP. Works in IE7.</p>
+</tr></td><tr><td><p>Most pretty but basic:</p>
+
+<pre><code>data = {};
+$.each(
+    location.search.substr(1).split('&amp;').filter(Boolean).map(function(kvpairs){
+        return kvpairs.split('=')
+    }),
+    function(i,values) {
+        data[values.shift()] = values.join('=')
+    }
+);
+</code></pre>
+
+<p>It doesn't handle values lists such as <code>?a[]=1&amp;a[]2</code></p>
 </tr></td>

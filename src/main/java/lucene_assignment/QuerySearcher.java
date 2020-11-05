@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,9 @@ import org.apache.lucene.util.BytesRef;
 
 public class QuerySearcher {
 	public static void main(String[] args) throws IOException, ParseException {
+		long startTime = new Date().getTime();
+		try {
+		
 		EnglishAnalyzer analyzer = new EnglishAnalyzer();
 		Directory index = FSDirectory.open(Paths.get("./index"));
 
@@ -59,7 +63,7 @@ public class QuerySearcher {
 		FunctionScoreQuery scoreQuery=new FunctionScoreQuery(q, valueSource);
 		
 		GroupingSearch gSearch=new GroupingSearch("id");
-		gSearch.setAllGroups(true);
+//		gSearch.setAllGroups(true);
 		TopGroups<BytesRef> gSearchDocuments = gSearch.search(searcher, scoreQuery, 0, 10);
 		GroupDocs<BytesRef>[] test = gSearchDocuments.groups;
 		
@@ -74,6 +78,11 @@ public class QuerySearcher {
 		
 
 		ResultsToHtmlPage.toHtml(input,resultMap);
+		}catch (Exception e){
+			System.out.println(e);
+		}
+		long current = new Date().getTime();
+		System.out.println("it took " + Long.toString(current - startTime) + " ms");
 	      
 	}
 
@@ -86,7 +95,7 @@ public class QuerySearcher {
 		BooleanQuery.Builder queryBuilder = new BooleanQuery.Builder();
 		queryBuilder.add(qId, Occur.MUST);
 		BooleanQuery q = queryBuilder.build();
-		TopDocs docs = searcher.search(q, 10);
+		TopDocs docs = searcher.search(q, 1000);
 		ScoreDoc[] hits = docs.scoreDocs;
 		List<Document> results=new ArrayList<>();
 		for (int i = 0; i < hits.length; ++i) {

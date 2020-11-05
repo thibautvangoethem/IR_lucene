@@ -6,59 +6,626 @@ td, th {
   padding: 8px;
 }
 </style>
-</head><h1>How do you sort a dictionary by value?</h1><p>I often have to sort a dictionary, consisting of keys &amp; values, by value. For example, I have a hash of words and respective frequencies, that I want to order by frequency.</p>
+</head><h1>How do I find all files containing specific text on Linux?</h1><p>I'm trying to find a way to scan my entire Linux system for all files containing a specific string of text. Just to clarify, I'm looking for text within the file, not in the file name.</p>
 
-<p>There is a <code>SortedList</code> which is good for a single value (say frequency), that I want to map it back to the word.</p>
+<p>When I was looking up how to do this, I came across this solution twice:</p>
 
-<p><a href="http://msdn.microsoft.com/en-us/library/f7fta44c.aspx" rel="noreferrer">SortedDictionary</a> orders by key, not value. Some resort to a <a href="http://www.codeproject.com/KB/recipes/lookupcollection.aspx" rel="noreferrer">custom class</a>, but is there a cleaner way?</p>
-<table> <tr><th>answers</th></tr><tr><td><p>Looking around, and using some C# 3.0 features we can do this:</p>
-
-<pre><code>foreach (KeyValuePair&lt;string,int&gt; item in keywordCounts.OrderBy(key=&gt; key.Value))
-{ 
-    // do something with item.Key and item.Value
-}
+<pre><code>find / -type f -exec grep -H 'text-to-find-here' {} \;
 </code></pre>
 
-<p>This is the cleanest way I've seen and is similar to the Ruby way of handling hashes.</p>
-</tr></td><tr><td><p>On a high level, you have no other choice than to walk through the whole Dictionary and look at each value.</p>
+<p>However, it doesn't work. It seems to display every single file in the system.</p>
 
-<p>Maybe this helps:
-<a href="http://bytes.com/forum/thread563638.html" rel="nofollow noreferrer">http://bytes.com/forum/thread563638.html</a>
-Copy/Pasting from John Timney:</p>
+<p>Is this close to the proper way to do it? If not, how should I? This ability to find text strings in files would be extraordinarily useful for some programming projects I'm doing.</p>
+<table> <tr><th>answers</th></tr><tr><td><p>You can use <code>grep -ilR</code>:</p>
 
-<pre class="lang-cs prettyprint-override"><code>Dictionary&lt;string, string&gt; s = new Dictionary&lt;string, string&gt;();
-s.Add("1", "a Item");
-s.Add("2", "c Item");
-s.Add("3", "b Item");
-
-List&lt;KeyValuePair&lt;string, string&gt;&gt; myList = new List&lt;KeyValuePair&lt;string, string&gt;&gt;(s);
-myList.Sort(
-    delegate(KeyValuePair&lt;string, string&gt; firstPair,
-    KeyValuePair&lt;string, string&gt; nextPair)
-    {
-        return firstPair.Value.CompareTo(nextPair.Value);
-    }
-);
+<pre><code>grep -Ril "text-to-find-here" /
 </code></pre>
+
+<ul>
+<li><code>i</code> stands for ignore case (optional in your case).  </li>
+<li><code>R</code> stands for recursive.  </li>
+<li><code>l</code> stands for "show the file name, not the result itself".</li>
+<li><code>/</code> stands for starting at the root of your machine.</li>
+</ul>
+</tr></td><tr><td><p>Do the following:</p>
+<pre class="lang-sh prettyprint-override"><code>grep -rnw '/path/to/somewhere/' -e 'pattern'
+</code></pre>
+<ul>
+<li><code>-r</code> or <code>-R</code> is recursive,</li>
+<li><code>-n</code> is line number, and</li>
+<li><code>-w</code> stands for match the whole word.</li>
+<li><code>-l</code> (lower-case L) can be added to just give the file name of matching files.</li>
+</ul>
+<p>Along with these, <code>--exclude</code>, <code>--include</code>, <code>--exclude-dir</code> flags could be used for efficient searching:</p>
+<ul>
+<li><p>This will only search through those files which have .c or .h extensions:</p>
+<pre><code>grep --include=\*.{c,h} -rnw '/path/to/somewhere/' -e &quot;pattern&quot;
+</code></pre>
+</li>
+<li><p>This will exclude searching all the files ending with .o extension:</p>
+<pre><code>grep --exclude=\*.o -rnw '/path/to/somewhere/' -e &quot;pattern&quot;
+</code></pre>
+</li>
+<li><p>For directories it's possible to exclude one or more directories using the <code>--exclude-dir</code> parameter. For example, this will exclude the dirs dir1/, dir2/ and all of them matching *.dst/:</p>
+<pre><code>grep --exclude-dir={dir1,dir2,*.dst} -rnw '/path/to/somewhere/' -e &quot;pattern&quot;
+</code></pre>
+</li>
+</ul>
+<p>This works very well for me, to achieve almost the same purpose like yours.</p>
+<p>For more options check <code>man grep</code>.</p>
+</tr></td><tr><td><p>You can use <a href="http://beyondgrep.com/">ack</a>. It is like <a href="http://en.wikipedia.org/wiki/Grep">grep</a> for source code. You can scan your entire file system with it.</p>
+
+<p>Just do:</p>
+
+<pre><code>ack 'text-to-find-here'
+</code></pre>
+
+<p>In your root directory.</p>
+
+<p>You can also use <a href="http://en.wikipedia.org/wiki/Regular_expression">regular expressions</a>, specify the filetype, etc.</p>
+
+<hr>
+
+<p><strong>UPDATE</strong></p>
+
+<p>I just discovered <a href="https://github.com/ggreer/the_silver_searcher">The Silver Searcher</a>, which is like ack but 3-5x faster than it and even ignores patterns from a <code>.gitignore</code> file.</p>
+</tr></td><tr><td><p>You can use this:</p>
+
+<pre><code>grep -inr "Text" folder/to/be/searched/
+</code></pre>
+</tr></td><tr><td><h2>List of file names containing a given text</h2>
+
+<p>First of all, I believe you have used <code>-H</code> instead of <code>-l</code>. Also you can try adding the text inside quotes followed by <code>{} \</code>.</p>
+
+<pre><code>find / -type f -exec grep -l "text-to-find-here" {} \; 
+</code></pre>
+
+<h2>Example</h2>
+
+<p>Let's say you are searching for files containing specific text "Apache License" inside your directory. It will display results somewhat similar to below (output will be different based on your directory content).</p>
+
+<pre><code>bash-4.1$ find . -type f -exec grep -l "Apache License" {} \; 
+./net/java/jvnet-parent/5/jvnet-parent-5.pom
+./commons-cli/commons-cli/1.3.1/commons-cli-1.3.1.pom
+./io/swagger/swagger-project/1.5.10/swagger-project-1.5.10.pom
+./io/netty/netty-transport/4.1.7.Final/netty-transport-4.1.7.Final.pom
+./commons-codec/commons-codec/1.9/commons-codec-1.9.pom
+./commons-io/commons-io/2.4/commons-io-2.4.pom
+bash-4.1$ 
+</code></pre>
+
+<h2>Remove case sensitiveness</h2>
+
+<p>Even if you are not use about the case like "text" vs "TEXT", you can use the <code>-i</code> switch to ignore case. You can read further details <a href="http://www.digizol.com/2010/10/linux-find-content-filenames-search.html" rel="noreferrer">here</a>. </p>
+
+<p>Hope this helps you.</p>
+</tr></td><tr><td><p>I wrote a <a href="https://github.com/dilawar/Scripts/blob/master/sniff.py" rel="noreferrer">Python script</a> which does something similar. This is how one should use this script.</p>
+
+<pre><code>./sniff.py path pattern_to_search [file_pattern]
+</code></pre>
+
+<p>The first argument, <code>path</code>, is the directory in which we will search recursively. The second argument, <code>pattern_to_search</code>, is a regular expression which we want to search in a file. We use the regular expression format defined in the <a href="http://en.wikipedia.org/wiki/Python_%28programming_language%29" rel="noreferrer">Python</a> <code>re</code> library. In this script, the <code>.</code> also matches newline.</p>
+
+<p>The third argument, <code>file_pattern</code>, is optional. This is another regular expression which works on a filename. Only those files which matches this regular expression will be considered. </p>
+
+<p>For example, if I want to search Python files with the extension <code>py</code> containing <code>Pool(</code> followed by word <code>Adaptor</code>, I do the following,</p>
+
+<pre><code>./sniff.py . "Pool(.*?Adaptor"  .*py
+./Demos/snippets/cubeMeshSigNeur.py:146 
+./Demos/snippets/testSigNeur.py:259 
+./python/moose/multiscale/core/mumbl.py:206 
+./Demos/snippets/multiComptSigNeur.py:268 
+</code></pre>
+
+<p>And voila, it generates the path of matched files and line number at which the match was found. If more than one match was found, then each line number will be appended to the filename.</p>
+</tr></td><tr><td><p>Here are the several list of commands that can be used to search file.</p>
+
+<pre><code>grep "text string to search” directory-path
+
+grep [option] "text string to search” directory-path
+
+grep -r "text string to search” directory-path
+
+grep -r -H "text string to search” directory-path
+
+egrep -R "word-1|word-2” directory-path
+
+egrep -w -R "word-1|word-2” directory-path
+</code></pre>
+</tr></td><tr><td><p>To search for the string and output just that line with the search string: </p>
+
+<pre><code>for i in $(find /path/of/target/directory -type f); do grep -i "the string to look for" "$i"; done
+</code></pre>
+
+<p>e.g.:</p>
+
+<pre><code>for i in $(find /usr/share/applications -type f); \
+do grep -i "web browser" "$i"; done
+</code></pre>
+
+<p>To display filename containing the search string:</p>
+
+<pre><code>for i in $(find /path/of/target/directory -type f); do if grep -i "the string to look for" "$i" &gt; /dev/null; then echo "$i"; fi; done;
+</code></pre>
+
+<p>e.g.:</p>
+
+<pre><code>for i in $(find /usr/share/applications -type f); \
+do if grep -i "web browser" "$i" &gt; /dev/null; then echo "$i"; \
+fi; done;
+</code></pre>
+</tr></td><tr><td><p>You can use:</p>
+
+<pre><code>grep -r "string to be searched"  /path/to/dir
+</code></pre>
+
+<p>The <code>r</code> stands for recursive and so will search in the path specified and also its sub-directories. This will tell you the file name as well as print out the line in the file where the string appears.</p>
+
+<p>Or a command similar to the one you are trying (example: ) for searching in all javascript files (*.js):</p>
+
+<pre><code>find . -name '*.js' -exec grep -i 'string to search for' {} \; -print
+</code></pre>
+
+<p>This will print the lines in the files where the text appears, but it does not print the file name.</p>
+
+<p>In addition to this command, we can write this too:
+<strong>grep -rn "String to search" /path/to/directory/or/file</strong>
+<em>-r: recursive search</em>
+<em>n: line number will be shown for matches</em></p>
+</tr></td><tr><td><p><code>grep</code> can be used even if we're not looking for a string.</p>
+
+<p>Simply running,</p>
+
+<pre><code>grep -RIl "" .
+</code></pre>
+
+<p>will print out the path to all text files, i.e. those containing only printable characters.</p>
+</tr></td><tr><td><p>The below command will work fine for this approach:</p>
+
+<pre><code>find ./ -name "file_pattern_name"  -exec grep -r "pattern" {} \;
+</code></pre>
+</tr></td><tr><td><p>You can use the following commands to find particular text from a file:</p>
+
+<pre><code>cat file | grep 'abc' | cut -d':' -f2
+</code></pre>
+</tr></td><tr><td><p>A Simple <code>find</code> can work handy. alias it in your <code>~/.bashrc</code> file:</p>
+
+<pre><code>alias ffind find / -type f | xargs grep
+</code></pre>
+
+<p>Start a new terminal and issue:</p>
+
+<pre><code>ffind 'text-to-find-here'
+</code></pre>
+</tr></td><tr><td><blockquote>
+  <p>How do I find all files containing specific text on Linux?
+  (...)</p>
+  
+  <p>I came across this solution twice:</p>
+  
+  <p><code>find / -type f -exec grep -H 'text-to-find-here' {} \;</code></p>
+</blockquote>
+
+<hr>
+
+<p>If using <strong><a href="http://man7.org/linux/man-pages/man1/find.1.html" rel="noreferrer">find</a></strong> like in your example, better add <code>-s</code> (<code>--no-messages</code>) to <code>grep</code>, and <code>2&gt;/dev/null</code> at the end of the command to avoid lots of <em>Permission denied</em> messages issued by <code>grep</code> and <code>find</code>:</p>
+
+<pre><code>find / -type f -exec grep -sH 'text-to-find-here' {} \; 2&gt;/dev/null
+</code></pre>
+
+<p><strong><a href="http://man7.org/linux/man-pages/man1/find.1.html" rel="noreferrer">find</a></strong> is the standard tool for searching files - combined with grep when looking for specific text - on Unix-like platforms. The <a href="http://man7.org/linux/man-pages/man1/find.1.html" rel="noreferrer">find</a> command is often combined with <a href="http://man7.org/linux/man-pages/man1/xargs.1.html" rel="noreferrer">xargs</a>, by the way.</p>
+
+<p>Faster and easier tools exist for the same purpose - see below. Better try them, <em>provided they're available on your platform</em>, of course:</p>
+
+<h2>Faster and easier alternatives</h2>
+
+<p><strong><a href="https://github.com/BurntSushi/ripgrep" rel="noreferrer">RipGrep</a></strong> - fastest search tool around:</p>
+
+<pre><code>rg 'text-to-find-here' / -l
+</code></pre>
+
+<p><strong><a href="https://geoff.greer.fm/ag" rel="noreferrer">The Silver Searcher</a></strong>:</p>
+
+<pre><code>ag 'text-to-find-here' / -l
+</code></pre>
+
+<p><strong><a href="https://beyondgrep.com/documentation" rel="noreferrer">ack</a></strong>:</p>
+
+<pre><code>ack 'text-to-find-here' / -l
+</code></pre>
+
+<p>Note: You can add <code>2&gt;/dev/null</code> to these commands as well, to hide many error messages.</p>
+
+<hr>
+
+<p><strong>Warning</strong>: <em>unless you really can't avoid it, don't search from <a href="https://en.wikipedia.org/wiki/Root_directory" rel="noreferrer"><strong>'/'</strong> (the root directory)</a> to avoid a long and inefficient search!
+ So in the examples above, you'd better replace '<strong>/</strong>' by a sub-directory name, e.g. "/home" depending where you actually want to search...</em></p>
+</tr></td><tr><td><pre><code>grep -insr "pattern" *
+</code></pre>
+
+<ul>
+<li><code>i</code>: Ignore case distinctions in both the PATTERN and the input files.</li>
+<li><code>n</code>: Prefix each line of output with the 1-based line number within its input file.</li>
+<li><code>s</code>: Suppress error messages about nonexistent or unreadable files.</li>
+<li><code>r</code>: Read all files under each directory, recursively.</li>
+</ul>
+</tr></td><tr><td><p>Avoid the hassle and install ack-grep. It eliminates a lot of permission and quotation issues.</p>
+
+<pre><code>apt-get install ack-grep
+</code></pre>
+
+<p>Then go to the directory you want to search and run the command below</p>
+
+<pre><code>cd /
+ack-grep "find my keyword"
+</code></pre>
+</tr></td><tr><td><p>Try this</p>
+
+<pre><code>find . -type f -name some_file_name.xml -exec grep -H PUT_YOUR_STRING_HERE {} \;
+</code></pre>
+</tr></td><tr><td><p>There's a new utility called <strong>The Silversearcher</strong></p>
+
+<pre><code>sudo apt install silversearcher-ag
+</code></pre>
+
+<p>It works closely with Git and other VCS. So you won't get anything in a <em>.git</em> or another directory.</p>
+
+<p>You can simply use</p>
+
+<pre><code>ag "Search query"
+</code></pre>
+
+<p>And it will do the task for you!</p>
 </tr></td><tr><td><p>Use:</p>
 
-<pre><code>using System.Linq.Enumerable;
-...
-List&lt;KeyValuePair&lt;string, string&gt;&gt; myList = aDictionary.ToList();
-
-myList.Sort(
-    delegate(KeyValuePair&lt;string, string&gt; pair1,
-    KeyValuePair&lt;string, string&gt; pair2)
-    {
-        return pair1.Value.CompareTo(pair2.Value);
-    }
-);
+<pre><code>grep -Erni + "text you wanna search"
 </code></pre>
 
-<p>Since you're targeting .NET 2.0 or above, you can simplify this into lambda syntax -- it's equivalent, but shorter. If you're targeting .NET 2.0 you can only use this syntax if you're using the compiler from Visual&nbsp;Studio&nbsp;2008 (or above).</p>
+<p>The command will search recursively in all files and directories of the current directory and print the result.</p>
 
-<pre><code>var myList = aDictionary.ToList();
+<p>Note: if your grep output isn't colored, you can change it by using the grep='grep --color=always' alias in your shell source file.</p>
+</tr></td><tr><td><p>Try this:</p>
 
-myList.Sort((pair1,pair2) =&gt; pair1.Value.CompareTo(pair2.Value));
+<pre><code>find / -type f -name "*" -exec grep -il "String_to_search" {} \;
+</code></pre>
+
+<p>Or</p>
+
+<pre><code>for i in /*;do grep -Ril "String_to_search" $i;done 2&gt; /dev/null
+</code></pre>
+</tr></td><tr><td><p>There is an <code>ack</code> tool that would do exactly what you are looking for.</p>
+
+<p><a href="http://linux.die.net/man/1/ack" rel="noreferrer">http://linux.die.net/man/1/ack</a></p>
+
+<pre><code>ack -i search_string folder_path/*
+</code></pre>
+
+<p>You may ignore <code>-i</code> for case sensitive search</p>
+</tr></td><tr><td><p>Try:</p>
+
+<pre><code>find . -name "*.txt" | xargs grep -i "text_pattern"
+</code></pre>
+</tr></td><tr><td><p>Try this:</p>
+
+<pre><code>find . | xargs grep 'word' -sl
+</code></pre>
+</tr></td><tr><td><p>If your <code>grep</code> doesn't support recursive search, you can combine <code>find</code> with <code>xargs</code>:</p>
+
+<pre><code>find / -type f | xargs grep 'text-to-find-here'
+</code></pre>
+
+<p>I find this easier to remember than the format for <code>find -exec</code>.</p>
+
+<p>This will output the filename and the content of the matched line, e.g.</p>
+
+<pre><code>/home/rob/file:text-to-find-here
+</code></pre>
+
+<p>Optional flags you may want to add to <code>grep</code>:</p>
+
+<ul>
+<li><code>-i</code> - case insensitive search</li>
+<li><code>-l</code> - only output the filename where the match was found</li>
+<li><code>-h</code> - only output the line which matched (not the filename)</li>
+</ul>
+</tr></td><tr><td><p>Silver Searcher is a terrific tool, but ripgrep may be even better.  </p>
+
+<p>It works on Linux, Mac and Windows, and was written up on <a href="https://en.wikipedia.org/wiki/Hacker_News" rel="noreferrer">Hacker News</a> a couple of months ago (this has a link to Andrew Gallant's Blog which has a GitHub link):</p>
+
+<p><em><a href="https://news.ycombinator.com/item?id=12564442" rel="noreferrer">Ripgrep – A new command line search tool</a></em></p>
+</tr></td><tr><td><p>Use:</p>
+
+<pre><code>grep -c Your_Pattern *
+</code></pre>
+
+<p>This will report how many copies of your pattern are there in each of the files in the current directory.</p>
+</tr></td><tr><td><h3><a href="https://en.wikipedia.org/wiki/grep" rel="nofollow noreferrer"><code>grep</code></a> (<a href="https://www.gnu.org/software/grep/" rel="nofollow noreferrer">GNU</a> or <a href="https://wiki.freebsd.org/BSDgrep" rel="nofollow noreferrer">BSD</a>)</h3>
+<p>You can use <code>grep</code> tool to search recursively the current folder, like:</p>
+<pre><code>grep -r &quot;class foo&quot; .
+</code></pre>
+<p><sup>Note: <code>-r</code> - Recursively search subdirectories.</sup></p>
+<p>You can also use globbing syntax to search within specific files such as:</p>
+<pre><code>grep &quot;class foo&quot; **/*.c
+</code></pre>
+<p><sup>Note: By using <a href="http://www.linuxjournal.com/content/globstar-new-bash-globbing-option" rel="nofollow noreferrer">globbing option</a> (<code>**</code>), it scans all the files recursively with specific extension or pattern. <strong>To enable this syntax, run: <a href="https://stackoverflow.com/q/793715/55075"><code>shopt -s globstar</code></a>.</strong> You may also use <code>**/*.*</code> for all files (excluding hidden and without extension) or any other pattern.</sup></p>
+<p>If you've the error that your argument is too long, consider narrowing down your search, or use <code>find</code> syntax instead such as:</p>
+<pre><code>find . -name &quot;*.php&quot; -execdir grep -nH --color=auto foo {} ';'
+</code></pre>
+<p>Alternatively, use <a href="https://blog.burntsushi.net/ripgrep/" rel="nofollow noreferrer"><code>ripgrep</code></a>.</p>
+<h3><a href="https://blog.burntsushi.net/ripgrep/" rel="nofollow noreferrer"><code>ripgrep</code></a></h3>
+<p>If you're working on larger projects or big files, you should use <code>ripgrep</code> instead, like:</p>
+<pre><code>rg &quot;class foo&quot; .
+</code></pre>
+<p><sup>Checkout the docs, installation steps or source code on the <a href="https://github.com/BurntSushi/ripgrep" rel="nofollow noreferrer">GitHub project page</a>.</sup></p>
+<p>It's much quicker than any other tool like <a href="https://www.gnu.org/software/grep/" rel="nofollow noreferrer">GNU</a>/<a href="https://wiki.freebsd.org/BSDgrep" rel="nofollow noreferrer">BSD</a> <a href="https://en.wikipedia.org/wiki/grep" rel="nofollow noreferrer"><code>grep</code></a>, <a href="https://github.com/gvansickle/ucg" rel="nofollow noreferrer"><code>ucg</code></a>, <a href="https://github.com/ggreer/the_silver_searcher" rel="nofollow noreferrer"><code>ag</code></a>, <a href="https://github.com/svent/sift" rel="nofollow noreferrer"><code>sift</code></a>, <a href="https://github.com/petdance/ack2" rel="nofollow noreferrer"><code>ack</code></a>, <a href="https://github.com/monochromegane/the_platinum_searcher" rel="nofollow noreferrer"><code>pt</code></a> or similar, since it is built on top of <a href="https://github.com/rust-lang/regex" rel="nofollow noreferrer">Rust's regex engine</a> which uses finite automata, SIMD and aggressive literal optimizations to make searching very fast.</p>
+<p>It supports ignore patterns specified in <code>.gitignore</code> files, so a single file path can be matched against multiple glob patterns simultaneously.</p>
+<hr />
+<p>You can use common parameters such as:</p>
+<ul>
+<li><code>-i</code> - Insensitive searching.</li>
+<li><code>-I</code> - Ignore the binary files.</li>
+<li><code>-w</code> - Search for the whole words (in the opposite of partial word matching).</li>
+<li><code>-n</code> - Show the line of your match.</li>
+<li><code>-C</code>/<code>--context</code> (e.g. <code>-C5</code>) - Increases context, so you see the surrounding code.</li>
+<li><code>--color=auto</code> - Mark up the matching text.</li>
+<li><code>-H</code> - Displays filename where the text is found.</li>
+<li><code>-c</code> - Displays count of matching lines. Can be combined with <code>-H</code>.</li>
+</ul>
+</tr></td><tr><td><p>If you have a set of files that you will always be checking you can alias their paths, for example:</p>
+
+<pre><code>alias fd='find . -type f -regex ".*\.\(inc\|info\|module\|php\|test\|install\|uninstall\)"'
+</code></pre>
+
+<p>Then you can simply filter the list like this:</p>
+
+<pre><code>grep -U -l $'\015' $(fd)
+</code></pre>
+
+<p>Which filters out the list fd to files that contain the CR pattern.</p>
+
+<p>I find that aliasing the files that I am interested in helps me create easier scripts then always trying to remember how to get all those files.  The recursive stuff works as well but sooner or later you are going to have to contend with weeding out specific file types.  Which is is why I just find all the file types I'm interested in to begin with.</p>
+</tr></td><tr><td><p>Hope this is of assistance...</p>
+
+<p>Expanding the <code>grep</code> a bit to give more information in the output, for example, to get the line number in the file where the text is can be done as follows:</p>
+
+<pre><code>find . -type f -name "*.*" -print0 | xargs --null grep --with-filename --line-number --no-messages --color --ignore-case "searthtext"
+</code></pre>
+
+<p>And if you have an idea what the file type is you can narrow your search down by specifying file type extensions to search for, in this case <code>.pas</code> OR <code>.dfm</code> files:</p>
+
+<pre><code>find . -type f \( -name "*.pas" -o -name "*.dfm" \) -print0 | xargs --null grep --with-filename --line-number --no-messages --color --ignore-case "searchtext"
+</code></pre>
+
+<p>Short explanation of the options:</p>
+
+<ol>
+<li><code>.</code> in the <code>find</code> specifies from the current directory.</li>
+<li><code>-name</code> "<code>*.*</code>" : for all files
+( -name "<code>*.pas</code>" -o -name "<code>*.dfm</code>" ) : Only the <code>*.pas</code> OR <code>*.dfm</code> files, OR specified with <code>-o</code></li>
+<li><code>-type f</code> specifies that you are looking for files</li>
+<li><code>-print0</code> and <code>--null</code> on the other side of the <code>|</code> (pipe) are the crucial ones, passing the filename from the <code>find</code> to the <code>grep</code> embedded in the <code>xargs</code>, allowing for the passing of filenames WITH spaces in the filenames, allowing grep to treat the path and filename as one string, and not break it up on each space.</li>
+</ol>
+</tr></td><tr><td><pre><code>find /path -type f -exec grep -l "string" {} \;
+</code></pre>
+
+<p>Explanation from comments</p>
+
+<p>find is a command that lets you find files and other objects like directories and links in subdirectories of a given path. If you don't specify a mask that filesnames should meet, it enumerates all directory objects.</p>
+
+<pre><code>-type f specifies that it should proceed only files, not directories etc.
+-exec grep specifies that for every found file, it should run grep command, passing its filename as an argument to it, by replacing {} with the filename
+</code></pre>
+</tr></td><tr><td><p>Try:</p>
+
+<pre><code>find / -type f -exec grep -H 'text-to-find-here' {} \;
+</code></pre>
+
+<p>which will search all file systems, because <code>/</code> is the root folder.</p>
+
+<p>For home folder use:</p>
+
+<pre><code>find ~/ -type f -exec grep -H 'text-to-find-here' {} \;
+</code></pre>
+
+<p>For current folder use:</p>
+
+<pre><code>find ./ -type f -exec grep -H 'text-to-find-here' {} \;
+</code></pre>
+</tr></td><tr><td><p>You can use below command as you don't want file name but you want to search from all the files. 
+Here are i am capturing "TEXT" form All the log files making sure that file name is not printed</p>
+
+<pre><code>grep -e TEXT *.log | cut -d' ' --complement -s -f1
+</code></pre>
+
+<p>grep with -e option is quite quick compared to other option as it is for PATTERN match</p>
+</tr></td><tr><td><p>Use <code>pwd</code> to search from any directory you are in, recursing downward</p>
+
+<pre><code>grep -rnw `pwd` -e "pattern"
+</code></pre>
+
+<p><strong>Update</strong>
+Depending on the version of grep you are using, you can omit <code>pwd</code>. On newer versions <code>.</code> seems to be the default case for grep if no directory is given
+thus:</p>
+
+<p><code>grep -rnw -e "pattern"</code> </p>
+
+<p>or </p>
+
+<p><code>grep -rnw "pattern"</code> </p>
+
+<p>will do the same thing as above!</p>
+</tr></td><tr><td><p>All previous answers suggest grep and find. But there is another way: Use <a href="https://en.wikipedia.org/wiki/Midnight_Commander" rel="nofollow noreferrer">Midnight Commander</a></p>
+
+<p>It is a free utility (30 years old, proven by time) which is visual without being GUI. It has tons of functions, and finding files is just one of them. </p>
+</tr></td><tr><td><p>See also <a href="https://github.com/monochromegane/the_platinum_searcher" rel="noreferrer">The Platinium Searcher</a>, which is similar to <a href="https://github.com/ggreer/the_silver_searcher" rel="noreferrer">The Silver Searcher</a> and it's written in Go.</p>
+
+<p>Example:</p>
+
+<pre><code>pt -e 'text to search'
+</code></pre>
+</tr></td><tr><td><p>As <a href="https://stackoverflow.com/questions/16956810/how-do-i-find-all-files-containing-specific-text-on-linux/44704863#44704863">Peter in the previous answer mentioned</a>, all previous answers suggest grep and find.</p>
+
+<p>But there is a more sophisticated way using <a href="https://gcmd.github.io/" rel="nofollow noreferrer">Gnome Commander</a> with a perfect <strong>GUI</strong> and with tons of options since 2001, and finding files is just one of them. It is a free utility as well, proven by time.</p>
+</tr></td><tr><td><p><a href="https://en.wikipedia.org/wiki/Grep" rel="nofollow noreferrer">grep</a> is your good friend to achieve this.</p>
+
+<pre><code>grep -r &lt;text_fo_find&gt; &lt;directory&gt;
+</code></pre>
+
+<p>If you don't care about the case of the text to find, then use:</p>
+
+<pre><code>grep -ir &lt;text_to_find&gt; &lt;directory&gt;
+</code></pre>
+</tr></td><tr><td><p><code>find</code> with <code>xarg</code>s is preferred when there are many potential matches to sift through. It runs more slowly than other options, but it always works. As some have discovered,<code>xargs</code> does not handle files with embedded spaces by default. You can overcome this by specifying the <code>-d</code> option. </p>
+
+<p>Here is @RobEarl's answer, enhanced so it handles files with spaces:</p>
+
+<pre><code>find / -type f | xargs -d '\n' grep 'text-to-find-here'
+</code></pre>
+
+<p>Here is @venkat's answer, similarly enhanced:</p>
+
+<pre><code>find . -name "*.txt" | xargs -d '\n' grep -i "text_pattern"
+</code></pre>
+
+<p>Here is @Gert van Biljon's answer, similarly enhanced:</p>
+
+<pre><code>find . -type f -name "*.*" -print0 | xargs -d '\n' --null grep --with-filename --line-number --no-messages --color --ignore-case "searthtext"
+</code></pre>
+
+<p>Here is @LetalProgrammer's answer, similarly enhanced:</p>
+
+<pre><code>alias ffind find / -type f | xargs -d '\n' grep
+</code></pre>
+
+<p>Here is @Tayab Hussain's answer, similarly enhanced:</p>
+
+<pre><code>find . | xargs -d '\n' grep 'word' -sl
+</code></pre>
+</tr></td><tr><td><p>I am fascinated by how simple <a href="https://en.wikipedia.org/wiki/Grep" rel="nofollow noreferrer">grep</a> makes it with 'rl':</p>
+
+<pre><code>grep -rl 'pattern_to_find' /path/where/to/find
+
+-r to recursively find a file / directory inside directories..
+-l to list files matching the 'pattern'
+</code></pre>
+
+<blockquote>
+  <p>Use '-r' without 'l' to see the file names followed by <strong>text in which the pattern is found</strong>!</p>
+</blockquote>
+
+<pre><code>grep -r 'pattern_to_find' /path/where/to/find
+</code></pre>
+
+<p>It works just perfect...</p>
+</tr></td><tr><td><p><strong>GUI Search Alternative - For Desktop Use:</strong></p>
+
+<p><sub><em>- As the question is not precisely asking for commands</em></sub></p>
+
+<p><strong>Searchmonkey</strong>: Advanced file search tool without having to index your system using regular expressions. Graphical equivalent to find/grep. Available for Linux (Gnome/KDE/Java) and Windows (Java) - open source GPL v3</p>
+
+<p><strong>Features:</strong></p>
+
+<ul>
+<li><sub>Advanced Regular Expressions</sub></li>
+<li><sub>Results shown in-context</sub></li>
+<li><sub>Search containing text</sub></li>
+<li><sub>Panel to display line containing text</sub></li>
+<li><sub>New 2018 updates</sub></li>
+<li><sub>etc.</sub></li>
+</ul>
+
+<p><strong>Download - Links:</strong></p>
+
+<ul>
+<li><sub>Homepage: <a href="http://searchmonkey.embeddediq.com/" rel="nofollow noreferrer">http://searchmonkey.embeddediq.com/</a></sub></li>
+<li><sub>Download: <a href="http://searchmonkey.embeddediq.com/index.php/download-latest" rel="nofollow noreferrer">http://searchmonkey.embeddediq.com/index.php/download-latest</a></sub></li>
+<li><sub>Repo: <a href="https://sourceforge.net/projects/searchmonkey/files/" rel="nofollow noreferrer">https://sourceforge.net/projects/searchmonkey/files/</a></sub></li>
+</ul>
+
+<p>.</p>
+
+<p><strong>Screen-shot:</strong></p>
+
+<p><a href="https://i.stack.imgur.com/JBWs3.jpg" rel="nofollow noreferrer"><img src="https://i.stack.imgur.com/JBWs3.jpg" alt="Enter image description here"></a></p>
+</tr></td><tr><td><p>If you strictly want to use <code>find</code> then use <strong><code>find + grep</code></strong>:</p>
+
+<p><code>find /path/to/somewhere/ -type f -exec grep -nw 'textPattern' {} \;</code></p>
+
+<p>steps:</p>
+
+<p>1.Use <code>find</code> to search files,<br>
+2.Then execute <code>grep</code> on all of them.</p>
+
+<p><strong>This can give you the power of <code>find</code> to find files.</strong></p>
+
+<ul>
+<li><p>Use <code>-name Pattern</code> if you want to <code>grep</code> only certain files:</p>
+
+<p><code>find /path/to/somewhere/ -type f -name \*.cpp -exec grep -nw 'textPattern' {} \;</code></p></li>
+</ul>
+
+<p>You can play with it and use different options of <code>find</code> to improve or narrow down your file search.</p>
+</tr></td><tr><td><p>Your command is correct. You just need to add <code>-l</code> to grep:</p>
+
+<pre><code>find / -type f -exec grep -l 'text-to-find-here' {} \;
+</code></pre>
+</tr></td><tr><td><p>You can also use <code>awk</code>:</p>
+
+<pre><code>awk '/^(pattern)/{print}' /path/to/find/*
+</code></pre>
+
+<p><code>pattern</code> is the string you want to match in the files.</p>
+</tr></td><tr><td><p>Find any files whose name is "<code>.kube/config</code>", and content include <code>eks_use1d</code>:</p>
+
+<pre><code>locate ".kube/config" | xargs -i sh -c 'echo \\n{};cat {} | grep eks_use1d'
+</code></pre>
+</tr></td><tr><td><blockquote>
+<p>I'm trying to find a way to <strong>scan my entire Linux system</strong> for all files containing a specific string of text. ... Is this close to the proper way to do it? If not, how should I? ... This ability to find text strings in files would be extraordinarily useful for some programming projects I'm doing.</p>
+</blockquote>
+<p>While you should never replace (or alias) a system command with a different program, due to risk of mysterious breakage of scripts or other utilities, if you are running a text search manually or from your own scripts or programs you should consider the fastest suitable program when searching a large number of files a number of times. Ten minutes to half an hour time spent installing and familiarizing yourself with a <em>better</em> utility can be recovered after a few uses for the use-case you described.</p>
+<p>A webpage offering a &quot;<a href="https://beyondgrep.com/feature-comparison/" rel="nofollow noreferrer">Feature comparison of ack, ag, git-grep, GNU grep and ripgrep</a>&quot; can assist you to decide which program offers the features you need.</p>
+<ul>
+<li><p>Andrew Gallant's Blog claims: &quot;<a href="https://blog.burntsushi.net/ripgrep/" rel="nofollow noreferrer">ripgrep is faster than {grep, ag, git grep, ucg, pt, sift}</a>&quot; (a claim shared by some of the others, this is why a feature comparison is helpful). Of particular interest is his section on <a href="https://blog.burntsushi.net/ripgrep/#regex-engine" rel="nofollow noreferrer">regex implementations</a> and pitfalls.</p>
+<p>The following <a href="https://blog.burntsushi.net/ripgrep/#whirlwind-tour" rel="nofollow noreferrer">command</a> searches all files, including hidden and executable:</p>
+<p><code>$ rg -uuu foobar</code></p>
+</li>
+<li><p><a href="https://geoff.greer.fm/ag/" rel="nofollow noreferrer">The Silver Searcher</a> (ag) claims it is 5-10x faster than Ack. This program is suggested in some other answers. The GitHub doesn't appear as recent as ripgrep's and there are noticably more commits and branches with fewer releases, it's hard to draw an absolute claim based on those stats. The <a href="https://news.ycombinator.com/item?id=12567328" rel="nofollow noreferrer">short version</a>: ripgrep is faster, but there's a tiny learning curve to not get caught by the differences.</p>
+</li>
+<li><p>So what could be next, you guessed it, the <a href="https://github.com/monochromegane/the_platinum_searcher" rel="nofollow noreferrer">platinum searcher</a>. The claims are: it searches code about 3–5× faster than ack, but its speed is equal to the silver searcher. It's written in GoLang and searches UTF-8, EUC-JP and Shift_JIS files; if that's of greater interest. The GitHub is neither particularly recent or active. GoLang itself has a fast and robust regex, but the platinum searcher would be better recommended if it had a better user interest.</p>
+</li>
+</ul>
+<p>For a combination of speed and power indexed query languages such as <a href="https://www.elastic.co/what-is/elasticsearch" rel="nofollow noreferrer">ElasticSearch</a> or <a href="http://lucene.apache.org/solr/" rel="nofollow noreferrer">Solr</a> can be a long term <a href="https://www.searchtechnologies.com/blog/solr-vs-elasticsearch-top-open-source-search" rel="nofollow noreferrer">investment that pays off</a>, but not if you want a quick and simple replacement for grep. OTOH both have an API which can be called from any program you write, adding powerful searches to your program.</p>
+<p>While it's possible to spawn an external program, execute a search, intercept its output and process it, calling an API is the way to go for power and performance.</p>
+<blockquote>
+<p><code>This question was protected Aug 6 '15 at 19:34 with this caution:</code><br />
+  We're looking for long answers that provide some explanation and context. Don't just give a one-line answer; explain why your answer is right, ideally with citations.</p>
+</blockquote>
+<p>While some answers suggest alternative ways to accomplish a search they don't explain <em>why</em> other than it's &quot;free&quot;, &quot;faster&quot;, &quot;more sophisticated&quot;, &quot;tons of features&quot;, etc. Don't try to sell it, just tell us &quot;why your answer is right&quot;. I've attempted to teach <em>how</em> to choose what's best for the user, and <em>why</em>. This is why I offer yet another answer, when there are already so many. Otherwise I'd agree that there are already quite a few answers; I hope I've brought a lot new to the table.</p>
+</tr></td><tr><td><p>I tried the <code>grep</code> command below. It helps searching contents within my repository at <code>/etc/yum.repos.d</code>.</p>
+
+<pre><code>grep . -Ril -e 'texttoSearch' /etc/yum.repos.d
+
+</code></pre>
+</tr></td><tr><td><pre><code>grep -lrnw '/root/Desktop/ipozal' -e 'geolocation'
+</code></pre>
+</tr></td><tr><td><p>You can use <a href="https://github.com/BurntSushi/ripgrep" rel="nofollow noreferrer">ripgrep</a> which will respect by default project's <code>.gitignore</code> file</p>
+<p><img src="https://burntsushi.net/stuff/ripgrep1.png" alt="ripgrep" /></p>
+<p>To suppress <code>Permission denied</code> errors</p>
+<pre><code>rg -i rustacean 2&gt; /dev/null
+</code></pre>
+<p>which will redirect the <code>stderr</code> (standard error output) to <code>/dev/null</code></p>
+</tr></td><tr><td><p>Try this command. Which will give you the files containing the pattern you entered.</p>
+
+<pre><code>sudo grep -inr "your-pattern" /
+</code></pre>
+
+<p>Here:
+i - Ignore case distinctions, so that characters that differ only in case match each other.</p>
+
+<p>n - Make  sure  that the first character of actual line content lies on a tab stop, so that the alignment of tabs looks normal.</p>
+
+<p>r - Read  all  files  under each directory, recursively, following symbolic links only if they are on the command line.  Note that if no file operand is given, grep searches the working directory.</p>
+</tr></td><tr><td><p>Kindly customize below command according to demand and find any string recursively from files.</p>
+<pre><code>grep -i hack $(find /etc/ -type f)
 </code></pre>
 </tr></td>
