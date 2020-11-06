@@ -6,1310 +6,707 @@ td, th {
   padding: 8px;
 }
 </style>
-</head><h1>Why is processing a sorted array faster than processing an unsorted array?</h1><p>Here is a piece of C++ code that shows some very peculiar behavior. For some strange reason, sorting the data miraculously makes the code almost six times faster:</p>
-<pre class="lang-cpp prettyprint-override"><code>#include &lt;algorithm&gt;
-#include &lt;ctime&gt;
-#include &lt;iostream&gt;
+</head><h1>What is the !! (not not) operator in JavaScript?</h1><p>I saw some code that seems to use an operator I don't recognize, in the form of two exclamation points, like so: <code>!!</code>. Can someone please tell me what this operator does?</p>
 
-int main()
-{
-    // Generate data
-    const unsigned arraySize = 32768;
-    int data[arraySize];
+<p>The context in which I saw this was,</p>
 
-    for (unsigned c = 0; c &lt; arraySize; ++c)
-        data[c] = std::rand() % 256;
-
-    // !!! With this, the next loop runs faster.
-    std::sort(data, data + arraySize);
-
-    // Test
-    clock_t start = clock();
-    long long sum = 0;
-
-    for (unsigned i = 0; i &lt; 100000; ++i)
-    {
-        // Primary loop
-        for (unsigned c = 0; c &lt; arraySize; ++c)
-        {
-            if (data[c] &gt;= 128)
-                sum += data[c];
-        }
-    }
-
-    double elapsedTime = static_cast&lt;double&gt;(clock() - start) / CLOCKS_PER_SEC;
-
-    std::cout &lt;&lt; elapsedTime &lt;&lt; std::endl;
-    std::cout &lt;&lt; &quot;sum = &quot; &lt;&lt; sum &lt;&lt; std::endl;
-}
+<pre><code>this.vertical = vertical !== undefined ? !!vertical : this.vertical;
 </code></pre>
-<ul>
-<li>Without <code>std::sort(data, data + arraySize);</code>, the code runs in 11.54 seconds.</li>
-<li>With the sorted data, the code runs in 1.93 seconds.</li>
-</ul>
-<hr />
-<p>Initially, I thought this might be just a language or compiler anomaly, so I tried Java:</p>
-<pre class="lang-java prettyprint-override"><code>import java.util.Arrays;
-import java.util.Random;
+<table> <tr><th>answers</th></tr><tr><td><p><code>!!</code> converts the value to the right of it to its equivalent boolean value. (Think poor man's way of "type-casting"). Its <em>intent</em> is usually to convey to the reader that the code does not care <em>what</em> value is in the variable, but what it's <a href="http://11heavens.com/falsy-and-truthy-in-javascript" rel="noreferrer">"truth" value</a> is.</p>
+</tr></td><tr><td><p>It converts the suffix to a Boolean value. </p>
+</tr></td><tr><td><p>It's a horribly obscure way to do a type conversion.</p>
 
-public class Main
-{
-    public static void main(String[] args)
-    {
-        // Generate data
-        int arraySize = 32768;
-        int data[] = new int[arraySize];
+<p><code>!</code> is <em>NOT</em>.  So <code>!true</code> is <code>false</code>, and <code>!false</code> is <code>true</code>. <code>!0</code> is <code>true</code>, and <code>!1</code> is <code>false</code>.</p>
 
-        Random rnd = new Random(0);
-        for (int c = 0; c &lt; arraySize; ++c)
-            data[c] = rnd.nextInt() % 256;
+<p>So you're converting a value to a boolean, then inverting it, then inverting it again.</p>
 
-        // !!! With this, the next loop runs faster
-        Arrays.sort(data);
+<pre><code>// Maximum Obscurity:
+val.enabled = !!userId;
 
-        // Test
-        long start = System.nanoTime();
-        long sum = 0;
+// Partial Obscurity:
+val.enabled = (userId != 0) ? true : false;
 
-        for (int i = 0; i &lt; 100000; ++i)
-        {
-            // Primary loop
-            for (int c = 0; c &lt; arraySize; ++c)
-            {
-                if (data[c] &gt;= 128)
-                    sum += data[c];
-            }
-        }
-
-        System.out.println((System.nanoTime() - start) / 1000000000.0);
-        System.out.println(&quot;sum = &quot; + sum);
-    }
-}
+// And finally, much easier to understand:
+val.enabled = (userId != 0);
 </code></pre>
-<p>With a similar but less extreme result.</p>
-<hr />
-<p>My first thought was that sorting brings the data into the <a href="https://en.wikipedia.org/wiki/CPU_cache" rel="noreferrer">cache</a>, but then I thought how silly that was because the array was just generated.</p>
-<ul>
-<li>What is going on?</li>
-<li>Why is processing a sorted array faster than processing an unsorted array?</li>
-</ul>
-<p>The code is summing up some independent terms, so the order should not matter.</p>
-<table> <tr><th>answers</th></tr><tr><td><p>No doubt some of us would be interested in ways of identifying code that is problematic for the CPU's branch-predictor. The Valgrind tool <code>cachegrind</code> has a branch-predictor simulator, enabled by using the <code>--branch-sim=yes</code> flag. Running it over the examples in this question, with the number of outer loops reduced to 10000 and compiled with <code>g++</code>, gives these results:</p>
+</tr></td><tr><td><p>It's a double <code>not</code> operation.  The first <code>!</code> converts the value to boolean and inverts its logical value.  The second <code>!</code> inverts the logical value back.</p>
+</tr></td><tr><td><p>! is "boolean not", which essentially typecasts the value of "enable" to its boolean opposite. The second ! flips this value. So, <code>!!enable</code> means "not not enable," giving you the value of <code>enable</code> as a boolean.</p>
+</tr></td><tr><td><p><code>!!foo</code> applies the unary not operator twice and is used to cast to boolean type similar to the use of unary plus <code>+foo</code> to cast to number and concatenating an empty string <code>''+foo</code> to cast to string.</p>
 
-<p><strong>Sorted:</strong></p>
+<p>Instead of these hacks, you can also use the constructor functions corresponding to the primitive types (<em>without</em> using <code>new</code>) to explicitly cast values, ie</p>
 
-<pre><code>==32551== Branches:        656,645,130  (  656,609,208 cond +    35,922 ind)
-==32551== Mispredicts:         169,556  (      169,095 cond +       461 ind)
-==32551== Mispred rate:            0.0% (          0.0%     +       1.2%   )
+<pre><code>Boolean(foo) === !!foo
+Number(foo)  === +foo
+String(foo)  === ''+foo
+</code></pre>
+</tr></td><tr><td><p>It's not a single operator, it's two.  It's equivalent to the following and is a quick way to cast a value to boolean. </p>
+
+<pre><code>val.enabled = !(!enable);
+</code></pre>
+</tr></td><tr><td><p>Double boolean negation. Often used to check if value is not undefined.</p>
+</tr></td><tr><td><p>It simulates the behavior of the <code>Boolean()</code> casting function.
+The first <code>NOT</code> returns a Boolean value no matter what operand it is given. The second <code>NOT</code> negates that <code>Boolean</code> value and so gives the <code>true</code> Boolean value of a variable. The end result is the same as using the <code>Boolean()</code> function on a value.</p>
+</tr></td><tr><td><p>Converts <code>Object</code> to <code>boolean</code>. If it was falsey (e.g. <code>0</code>, <code>null</code>, <code>undefined</code>, etc.), it will be <code>false</code>, otherwise, <code>true</code>.</p>
+
+<pre><code>!oObject  // inverted boolean
+!!oObject // non inverted boolean so true boolean representation
 </code></pre>
 
-<p><strong>Unsorted:</strong></p>
+<p>So <code>!!</code> is not an operator, it's just the <code>!</code> operator twice.</p>
 
-<pre><code>==32555== Branches:        655,996,082  (  655,960,160 cond +  35,922 ind)
-==32555== Mispredicts:     164,073,152  (  164,072,692 cond +     460 ind)
-==32555== Mispred rate:           25.0% (         25.0%     +     1.2%   )
+<p>Real World Example "Test IE version":  </p>
+
+<pre><code>const isIE8 = !! navigator.userAgent.match(/MSIE 8.0/);  
+console.log(isIE8); // returns true or false 
 </code></pre>
 
-<p>Drilling down into the line-by-line output produced by <code>cg_annotate</code> we see for the loop in question:</p>
+<p>If you ?</p>
 
-<p><strong>Sorted:</strong></p>
-
-<pre><code>          Bc    Bcm Bi Bim
-      10,001      4  0   0      for (unsigned i = 0; i &lt; 10000; ++i)
-           .      .  .   .      {
-           .      .  .   .          // primary loop
- 327,690,000 10,016  0   0          for (unsigned c = 0; c &lt; arraySize; ++c)
-           .      .  .   .          {
- 327,680,000 10,006  0   0              if (data[c] &gt;= 128)
-           0      0  0   0                  sum += data[c];
-           .      .  .   .          }
-           .      .  .   .      }
+<pre><code>console.log(navigator.userAgent.match(/MSIE 8.0/));  
+// returns either an Array or null  
 </code></pre>
 
-<p><strong>Unsorted:</strong></p>
+<p>But if you ?</p>
 
-<pre><code>          Bc         Bcm Bi Bim
-      10,001           4  0   0      for (unsigned i = 0; i &lt; 10000; ++i)
-           .           .  .   .      {
-           .           .  .   .          // primary loop
- 327,690,000      10,038  0   0          for (unsigned c = 0; c &lt; arraySize; ++c)
-           .           .  .   .          {
- 327,680,000 164,050,007  0   0              if (data[c] &gt;= 128)
-           0           0  0   0                  sum += data[c];
-           .           .  .   .          }
-           .           .  .   .      }
+<pre><code>console.log(!!navigator.userAgent.match(/MSIE 8.0/));  
+// returns either true or false
 </code></pre>
+</tr></td><tr><td><p>It's just the logical NOT operator, twice - it's used to convert something to boolean, e.g.:</p>
 
-<p>This lets you easily identify the problematic line - in the unsorted version the <code>if (data[c] &gt;= 128)</code> line is causing 164,050,007 mispredicted conditional branches (<code>Bcm</code>) under cachegrind's branch-predictor model, whereas it's only causing 10,006 in the sorted version.</p>
+<pre><code>true === !!10
+
+false === !!0
+</code></pre>
+</tr></td><tr><td><p>It seems that the <code>!!</code> operator results in a double negation.</p>
+
+<pre><code>var foo = "Hello World!";
+
+!foo // Result: false
+!!foo // Result: true
+</code></pre>
+</tr></td><tr><td><p>I suspect this is a leftover from C++ where people override the ! operator but not the bool operator.</p>
+
+<p>So to get a negative(or positive) answer in that case you would first need to use the ! operator to get a boolean, but if you wanted to check the positive case would use !!.</p>
+</tr></td><tr><td><p><strong>Brew some tea:</strong></p>
+
+<p><code>!!</code> is not an operator. It is the double-use of <code>!</code> -- which is the logical "not" operator. </p>
 
 <hr>
 
-<p>Alternatively, on Linux you can use the performance counters subsystem to accomplish the same task, but with native performance using CPU counters.</p>
+<p><strong>In theory:</strong></p>
 
-<pre><code>perf stat ./sumtest_sorted
-</code></pre>
+<p><strong><code>!</code></strong> determines the "truth" of what a value is not:</p>
 
-<p><strong>Sorted:</strong></p>
-
-<pre><code> Performance counter stats for './sumtest_sorted':
-
-  11808.095776 task-clock                #    0.998 CPUs utilized          
-         1,062 context-switches          #    0.090 K/sec                  
-            14 CPU-migrations            #    0.001 K/sec                  
-           337 page-faults               #    0.029 K/sec                  
-26,487,882,764 cycles                    #    2.243 GHz                    
-41,025,654,322 instructions              #    1.55  insns per cycle        
- 6,558,871,379 branches                  #  555.455 M/sec                  
-       567,204 branch-misses             #    0.01% of all branches        
-
-  11.827228330 seconds time elapsed
-</code></pre>
-
-<p><strong>Unsorted:</strong></p>
-
-<pre><code> Performance counter stats for './sumtest_unsorted':
-
-  28877.954344 task-clock                #    0.998 CPUs utilized          
-         2,584 context-switches          #    0.089 K/sec                  
-            18 CPU-migrations            #    0.001 K/sec                  
-           335 page-faults               #    0.012 K/sec                  
-65,076,127,595 cycles                    #    2.253 GHz                    
-41,032,528,741 instructions              #    0.63  insns per cycle        
- 6,560,579,013 branches                  #  227.183 M/sec                  
- 1,646,394,749 branch-misses             #   25.10% of all branches        
-
-  28.935500947 seconds time elapsed
-</code></pre>
-
-<p>It can also do source code annotation with dissassembly.</p>
-
-<pre><code>perf record -e branch-misses ./sumtest_unsorted
-perf annotate -d sumtest_unsorted
-</code></pre>
-
-
-
-<pre><code> Percent |      Source code &amp; Disassembly of sumtest_unsorted
-------------------------------------------------
-...
-         :                      sum += data[c];
-    0.00 :        400a1a:       mov    -0x14(%rbp),%eax
-   39.97 :        400a1d:       mov    %eax,%eax
-    5.31 :        400a1f:       mov    -0x20040(%rbp,%rax,4),%eax
-    4.60 :        400a26:       cltq   
-    0.00 :        400a28:       add    %rax,-0x30(%rbp)
-...
-</code></pre>
-
-<p>See <a href="https://perf.wiki.kernel.org/index.php/Tutorial" rel="noreferrer">the performance tutorial</a> for more details.</p>
-</tr></td><tr><td><p>I tried the same code with MATLAB 2011b with my MacBook Pro (Intel i7, 64 bit, 2.4 GHz) for the following MATLAB code:</p>
-
-<pre><code>% Processing time with Sorted data vs unsorted data
-%==========================================================================
-% Generate data
-arraySize = 32768
-sum = 0;
-% Generate random integer data from range 0 to 255
-data = randi(256, arraySize, 1);
-
-
-%Sort the data
-data1= sort(data); % data1= data  when no sorting done
-
-
-%Start a stopwatch timer to measure the execution time
-tic;
-
-for i=1:100000
-
-    for j=1:arraySize
-
-        if data1(j)&gt;=128
-            sum=sum + data1(j);
-        end
-    end
-end
-
-toc;
-
-ExeTimeWithSorting = toc - tic;
-</code></pre>
-
-<p>The results for the above MATLAB code are as follows:</p>
-
-<pre><code>  a: Elapsed time (without sorting) = 3479.880861 seconds.
-  b: Elapsed time (with sorting ) = 2377.873098 seconds.
-</code></pre>
-
-<p>The results of the C code as in @GManNickG I get:</p>
-
-<pre><code>  a: Elapsed time (without sorting) = 19.8761 sec.
-  b: Elapsed time (with sorting ) = 7.37778 sec.
-</code></pre>
-
-<p>Based on this, it looks MATLAB is almost <em>175 times</em> slower than the C implementation without sorting and <em>350 times</em> slower with sorting. In other words, the effect (of branch prediction) is <em>1.46x</em> for MATLAB implementation and <em>2.7x</em> for the C implementation.</p>
-</tr></td><tr><td><p>As data is distributed between 0 and 255 when the array is sorted, around the first half of the iterations will not enter the <code>if</code>-statement (the <code>if</code> statement is shared below).</p>
-
-<pre><code>if (data[c] &gt;= 128)
-    sum += data[c];
-</code></pre>
-
-<p>The question is: What makes the above statement not execute in certain cases as in case of sorted data? Here comes the "branch predictor". A branch predictor is a digital circuit that tries to guess which way a branch (e.g. an <code>if-then-else</code> structure) will go before this is known for sure. The purpose of the branch predictor is to improve the flow in the instruction pipeline. Branch predictors play a critical role in achieving high effective performance!</p>
-
-<p><strong>Let's do some bench marking to understand it better</strong></p>
-
-<p>The performance of an <code>if</code>-statement depends on whether its condition has a predictable pattern. If the condition is always true or always false, the branch prediction logic in the processor will pick up the pattern. On the other hand, if the pattern is unpredictable, the <code>if</code>-statement will be much more expensive.</p>
-
-<p>Let’s measure the performance of this loop with different conditions:</p>
-
-<pre><code>for (int i = 0; i &lt; max; i++)
-    if (condition)
-        sum++;
-</code></pre>
-
-<p>Here are the timings of the loop with different true-false patterns:</p>
-
-<pre><code>Condition                Pattern             Time (ms)
--------------------------------------------------------
-(i &amp; 0×80000000) == 0    T repeated          322
-
-(i &amp; 0xffffffff) == 0    F repeated          276
-
-(i &amp; 1) == 0             TF alternating      760
-
-(i &amp; 3) == 0             TFFFTFFF…           513
-
-(i &amp; 2) == 0             TTFFTTFF…           1675
-
-(i &amp; 4) == 0             TTTTFFFFTTTTFFFF…   1275
-
-(i &amp; 8) == 0             8T 8F 8T 8F …       752
-
-(i &amp; 16) == 0            16T 16F 16T 16F …   490
-</code></pre>
-
-<p>A “<strong>bad</strong>” true-false pattern can make an <code>if</code>-statement up to six times slower than a “<strong>good</strong>” pattern! Of course, which pattern is good and which is bad depends on the exact instructions generated by the compiler and on the specific processor.</p>
-
-<p>So there is no doubt about the impact of branch prediction on performance!</p>
-</tr></td><tr><td><p>I just read up on this question and its answers, and I feel an answer is missing.</p>
-
-<p>A common way to eliminate branch prediction that I've found to work particularly good in managed languages is a table lookup instead of using a branch (although I haven't tested it in this case).</p>
-
-<p>This approach works in general if:</p>
-
-<ol>
-<li>it's a small table and is likely to be cached in the processor, and</li>
-<li>you are running things in a quite tight loop and/or the processor can preload the data.</li>
-</ol>
-
-<p><strong>Background and why</strong></p>
-
-<p>From a processor perspective, your memory is slow. To compensate for the difference in speed, a couple of caches are built into your processor (L1/L2 cache). So imagine that you're doing your nice calculations and figure out that you need a piece of memory. The processor will get its 'load' operation and loads the piece of memory into cache -- and then uses the cache to do the rest of the calculations. Because memory is relatively slow, this 'load' will slow down your program.</p>
-
-<p>Like branch prediction, this was optimized in the Pentium processors: the processor predicts that it needs to load a piece of data and attempts to load that into the cache before the operation actually hits the cache. As we've already seen, branch prediction sometimes goes horribly wrong -- in the worst case scenario you need to go back and actually wait for a memory load, which will take forever (<strong>in other words: failing branch prediction is bad, a memory load after a branch prediction fail is just horrible!</strong>).</p>
-
-<p>Fortunately for us, if the memory access pattern is predictable, the processor will load it in its fast cache and all is well.</p>
-
-<p>The first thing we need to know is what is <em>small</em>? While smaller is generally better, a rule of thumb is to stick to lookup tables that are &lt;= 4096 bytes in size. As an upper limit: if your lookup table is larger than 64K it's probably worth reconsidering.</p>
-
-<p><strong>Constructing a table</strong></p>
-
-<p>So we've figured out that we can create a small table. Next thing to do is get a lookup function in place. Lookup functions are usually small functions that use a couple of basic integer operations (and, or, xor, shift, add, remove and perhaps multiply). You want to have your input translated by the lookup function to some kind of 'unique key' in your table, which then simply gives you the answer of all the work you wanted it to do.</p>
-
-<p>In this case: >= 128 means we can keep the value, &lt; 128 means we get rid of it. The easiest way to do that is by using an 'AND': if we keep it, we AND it with 7FFFFFFF; if we want to get rid of it, we AND it with 0. Notice also that 128 is a power of 2 -- so we can go ahead and make a table of 32768/128 integers and fill it with one zero and a lot of 7FFFFFFFF's.</p>
-
-<p><strong>Managed languages</strong></p>
-
-<p>You might wonder why this works well in managed languages. After all, managed languages check the boundaries of the arrays with a branch to ensure you don't mess up...</p>
-
-<p>Well, not exactly... :-)</p>
-
-<p>There has been quite some work on eliminating this branch for managed languages. For example:</p>
-
-
-
-<pre class="lang-cs prettyprint-override"><code>for (int i = 0; i &lt; array.Length; ++i)
-{
-   // Use array[i]
-}
-</code></pre>
-
-<p>In this case, it's obvious to the compiler that the boundary condition will never be hit. At least the Microsoft JIT compiler (but I expect Java does similar things) will notice this and remove the check altogether. WOW, that means no branch. Similarly, it will deal with other obvious cases.</p>
-
-<p>If you run into trouble with lookups in managed languages -- the key is to add a <code>&amp; 0x[something]FFF</code> to your lookup function to make the boundary check predictable -- and watch it going faster.</p>
-
-<p><strong>The result of this case</strong></p>
-
-<pre class="lang-cs prettyprint-override"><code>// Generate data
-int arraySize = 32768;
-int[] data = new int[arraySize];
-
-Random random = new Random(0);
-for (int c = 0; c &lt; arraySize; ++c)
-{
-    data[c] = random.Next(256);
-}
-
-/*To keep the spirit of the code intact, I'll make a separate lookup table
-(I assume we cannot modify 'data' or the number of loops)*/
-
-int[] lookup = new int[256];
-
-for (int c = 0; c &lt; 256; ++c)
-{
-    lookup[c] = (c &gt;= 128) ? c : 0;
-}
-
-// Test
-DateTime startTime = System.DateTime.Now;
-long sum = 0;
-
-for (int i = 0; i &lt; 100000; ++i)
-{
-    // Primary loop
-    for (int j = 0; j &lt; arraySize; ++j)
-    {
-        /* Here you basically want to use simple operations - so no
-        random branches, but things like &amp;, |, *, -, +, etc. are fine. */
-        sum += lookup[data[j]];
-    }
-}
-
-DateTime endTime = System.DateTime.Now;
-Console.WriteLine(endTime - startTime);
-Console.WriteLine("sum = " + sum);
-Console.ReadLine();
-</code></pre>
-</tr></td><tr><td><p>In the sorted case, you can do better than relying on successful branch prediction or any branchless comparison trick: completely remove the branch.</p>
-
-<p>Indeed, the array is partitioned in a contiguous zone with <code>data &lt; 128</code> and another with <code>data &gt;= 128</code>. So you should find the partition point with a <a href="https://en.wikipedia.org/wiki/Dichotomic_search" rel="noreferrer">dichotomic search</a> (using <code>Lg(arraySize) = 15</code> comparisons), then do a straight accumulation from that point.</p>
-
-<p>Something like (unchecked)</p>
-
-<pre><code>int i= 0, j, k= arraySize;
-while (i &lt; k)
-{
-  j= (i + k) &gt;&gt; 1;
-  if (data[j] &gt;= 128)
-    k= j;
-  else
-    i= j;
-}
-sum= 0;
-for (; i &lt; arraySize; i++)
-  sum+= data[i];
-</code></pre>
-
-<p>or, slightly more obfuscated</p>
-
-<pre><code>int i, k, j= (i + k) &gt;&gt; 1;
-for (i= 0, k= arraySize; i &lt; k; (data[j] &gt;= 128 ? k : i)= j)
-  j= (i + k) &gt;&gt; 1;
-for (sum= 0; i &lt; arraySize; i++)
-  sum+= data[i];
-</code></pre>
-
-<p>A yet faster approach, that gives an <strong>approximate</strong> solution for both sorted or unsorted is: <code>sum= 3137536;</code> (assuming a truly uniform distribution, 16384 samples with expected value 191.5) <strong>:-)</strong></p>
-</tr></td><tr><td><p>One way to avoid branch prediction errors is to build a lookup table, and index it using the data.  Stefan de Bruijn discussed that in his answer.</p>
-
-<p>But in this case, we know values are in the range [0, 255] and we only care about values >= 128.  That means we can easily extract a single bit that will tell us whether we want a value or not: by shifting the data to the right 7 bits, we are left with a 0 bit or a 1 bit, and we only want to add the value when we have a 1 bit.  Let's call this bit the "decision bit".</p>
-
-<p>By using the 0/1 value of the decision bit as an index into an array, we can make code that will be equally fast whether the data is sorted or not sorted.  Our code will always add a value, but when the decision bit is 0, we will add the value somewhere we don't care about.  Here's the code:</p>
-
-<pre><code>// Test
-clock_t start = clock();
-long long a[] = {0, 0};
-long long sum;
-
-for (unsigned i = 0; i &lt; 100000; ++i)
-{
-    // Primary loop
-    for (unsigned c = 0; c &lt; arraySize; ++c)
-    {
-        int j = (data[c] &gt;&gt; 7);
-        a[j] += data[c];
-    }
-}
-
-double elapsedTime = static_cast&lt;double&gt;(clock() - start) / CLOCKS_PER_SEC;
-sum = a[1];
-</code></pre>
-
-<p>This code wastes half of the adds but never has a branch prediction failure.  It's tremendously faster on random data than the version with an actual if statement.</p>
-
-<p>But in my testing, an explicit lookup table was slightly faster than this, probably because indexing into a lookup table was slightly faster than bit shifting.  This shows how my code sets up and uses the lookup table (unimaginatively called <code>lut</code> for "LookUp Table" in the code).  Here's the C++ code:</p>
-
-<pre><code>// Declare and then fill in the lookup table
-int lut[256];
-for (unsigned c = 0; c &lt; 256; ++c)
-    lut[c] = (c &gt;= 128) ? c : 0;
-
-// Use the lookup table after it is built
-for (unsigned i = 0; i &lt; 100000; ++i)
-{
-    // Primary loop
-    for (unsigned c = 0; c &lt; arraySize; ++c)
-    {
-        sum += lut[data[c]];
-    }
-}
-</code></pre>
-
-<p>In this case, the lookup table was only 256 bytes, so it fits nicely in a cache and all was fast.  This technique wouldn't work well if the data was 24-bit values and we only wanted half of them... the lookup table would be far too big to be practical.  On the other hand, we can combine the two techniques shown above: first shift the bits over, then index a lookup table.  For a 24-bit value that we only want the top half value, we could potentially shift the data right by 12 bits, and be left with a 12-bit value for a table index.  A 12-bit table index implies a table of 4096 values, which might be practical.</p>
-
-<p>The technique of indexing into an array, instead of using an <code>if</code> statement, can be used for deciding which pointer to use.  I saw a library that implemented binary trees, and instead of having two named pointers (<code>pLeft</code> and <code>pRight</code> or whatever) had a length-2 array of pointers and used the "decision bit" technique to decide which one to follow.  For example, instead of:</p>
-
-<pre><code>if (x &lt; node-&gt;value)
-    node = node-&gt;pLeft;
-else
-    node = node-&gt;pRight;
-</code></pre>
-
-<p>this library would do something like:</p>
-
-<pre><code>i = (x &lt; node-&gt;value);
-node = node-&gt;link[i];
-</code></pre>
-
-<p>Here's a link to this code: <a href="http://www.eternallyconfuzzled.com/tuts/datastructures/jsw_tut_rbtree.aspx" rel="noreferrer">Red Black Trees</a>, <em>Eternally Confuzzled</em></p>
-</tr></td><tr><td><p>If you are curious about even more optimizations that can be done to this code, consider this:</p>
-
-<p>Starting with the original loop:</p>
-
-<pre><code>for (unsigned i = 0; i &lt; 100000; ++i)
-{
-    for (unsigned j = 0; j &lt; arraySize; ++j)
-    {
-        if (data[j] &gt;= 128)
-            sum += data[j];
-    }
-}
-</code></pre>
-
-<p>With loop interchange, we can safely change this loop to:</p>
-
-<pre><code>for (unsigned j = 0; j &lt; arraySize; ++j)
-{
-    for (unsigned i = 0; i &lt; 100000; ++i)
-    {
-        if (data[j] &gt;= 128)
-            sum += data[j];
-    }
-}
-</code></pre>
-
-<p>Then, you can see that the <code>if</code> conditional is constant throughout the execution of the <code>i</code> loop, so you can hoist the <code>if</code> out:</p>
-
-<pre><code>for (unsigned j = 0; j &lt; arraySize; ++j)
-{
-    if (data[j] &gt;= 128)
-    {
-        for (unsigned i = 0; i &lt; 100000; ++i)
-        {
-            sum += data[j];
-        }
-    }
-}
-</code></pre>
-
-<p>Then, you see that the inner loop can be collapsed into one single expression, assuming the floating point model allows it (<code>/fp:fast</code> is thrown, for example)</p>
-
-<pre><code>for (unsigned j = 0; j &lt; arraySize; ++j)
-{
-    if (data[j] &gt;= 128)
-    {
-        sum += data[j] * 100000;
-    }
-}
-</code></pre>
-
-<p>That one is 100,000 times faster than before.</p>
-</tr></td><tr><td><p>The reason why performance improves drastically when the data is sorted is that the branch prediction penalty is removed, as explained beautifully in <a href="https://stackoverflow.com/questions/11227809/why-is-it-faster-to-process-a-sorted-array-than-an-unsorted-array/11227902#11227902">Mysticial's answer</a>.</p>
-
-<p>Now, if we look at the code</p>
-
-<pre><code>if (data[c] &gt;= 128)
-    sum += data[c];
-</code></pre>
-
-<p>we can find that the meaning of this particular <code>if... else...</code> branch is to add something when a condition is satisfied. This type of branch can be easily transformed into a <strong>conditional move</strong> statement, which would be compiled into a conditional move instruction: <code>cmovl</code>, in an <code>x86</code> system. The branch and thus the potential branch prediction penalty is removed.</p>
-
-<p>In <code>C</code>, thus <code>C++</code>, the statement, which would compile directly (without any optimization) into the conditional move instruction in <code>x86</code>, is the ternary operator <code>... ? ... : ...</code>. So we rewrite the above statement into an equivalent one:</p>
-
-<pre><code>sum += data[c] &gt;=128 ? data[c] : 0;
-</code></pre>
-
-<p>While maintaining readability, we can check the speedup factor.</p>
-
-<p>On an Intel <a href="http://en.wikipedia.org/wiki/Intel_Core#Core_i7" rel="noreferrer">Core i7</a>-2600K @ 3.4&nbsp;GHz and Visual Studio 2010 Release Mode, the benchmark is (format copied from Mysticial):</p>
-
-<p><strong>x86</strong></p>
-
-<pre><code>//  Branch - Random
-seconds = 8.885
-
-//  Branch - Sorted
-seconds = 1.528
-
-//  Branchless - Random
-seconds = 3.716
-
-//  Branchless - Sorted
-seconds = 3.71
-</code></pre>
-
-<p><strong>x64</strong></p>
-
-<pre><code>//  Branch - Random
-seconds = 11.302
-
-//  Branch - Sorted
- seconds = 1.830
-
-//  Branchless - Random
-seconds = 2.736
-
-//  Branchless - Sorted
-seconds = 2.737
-</code></pre>
-
-<p>The result is robust in multiple tests. We get a great speedup when the branch result is unpredictable, but we suffer a little bit when it is predictable. In fact, when using a conditional move, the performance is the same regardless of the data pattern.</p>
-
-<p>Now let's look more closely by investigating the <code>x86</code> assembly they generate. For simplicity, we use two functions <code>max1</code> and <code>max2</code>.</p>
-
-<p><code>max1</code> uses the conditional branch <code>if... else ...</code>:</p>
-
-<pre><code>int max1(int a, int b) {
-    if (a &gt; b)
-        return a;
-    else
-        return b;
-}
-</code></pre>
-
-<p><code>max2</code> uses the ternary operator <code>... ? ... : ...</code>:</p>
-
-<pre><code>int max2(int a, int b) {
-    return a &gt; b ? a : b;
-}
-</code></pre>
-
-<p>On a x86-64 machine, <code>GCC -S</code> generates the assembly below.</p>
-
-<pre><code>:max1
-    movl    %edi, -4(%rbp)
-    movl    %esi, -8(%rbp)
-    movl    -4(%rbp), %eax
-    cmpl    -8(%rbp), %eax
-    jle     .L2
-    movl    -4(%rbp), %eax
-    movl    %eax, -12(%rbp)
-    jmp     .L4
-.L2:
-    movl    -8(%rbp), %eax
-    movl    %eax, -12(%rbp)
-.L4:
-    movl    -12(%rbp), %eax
-    leave
-    ret
-
-:max2
-    movl    %edi, -4(%rbp)
-    movl    %esi, -8(%rbp)
-    movl    -4(%rbp), %eax
-    cmpl    %eax, -8(%rbp)
-    cmovge  -8(%rbp), %eax
-    leave
-    ret
-</code></pre>
-
-<p><code>max2</code> uses much less code due to the usage of instruction <code>cmovge</code>. But the real gain is that <code>max2</code> does not involve branch jumps, <code>jmp</code>, which would have a significant performance penalty if the predicted result is not right.</p>
-
-<p>So why does a conditional move perform better?</p>
-
-<p>In a typical <code>x86</code> processor, the execution of an instruction is divided into several stages. Roughly, we have different hardware to deal with different stages. So we do not have to wait for one instruction to finish to start a new one. This is called <strong><a href="http://en.wikipedia.org/wiki/Pipeline_%28computing%29" rel="noreferrer">pipelining</a></strong>.</p>
-
-<p>In a branch case, the following instruction is determined by the preceding one, so we cannot do pipelining. We have to either wait or predict.</p>
-
-<p>In a conditional move case, the execution conditional move instruction is divided into several stages, but the earlier stages like <code>Fetch</code> and <code>Decode</code> does not depend on the result of the previous instruction; only latter stages need the result. Thus, we wait a fraction of one instruction's execution time. This is why the conditional move version is slower than the branch when prediction is easy.</p>
-
-<p>The book <em><a href="https://rads.stackoverflow.com/amzn/click/com/0136108040" rel="noreferrer" rel="nofollow noreferrer">Computer Systems: A Programmer's Perspective, second edition</a></em> explains this in detail. You can check Section 3.6.6 for <em>Conditional Move Instructions</em>, entire Chapter 4 for <em>Processor Architecture</em>, and Section 5.11.2 for a special treatment for <em>Branch Prediction and Misprediction Penalties</em>.</p>
-
-<p>Sometimes, some modern compilers can optimize our code to assembly with better performance, sometimes some compilers can't (the code in question is using Visual Studio's native compiler). Knowing the performance difference between branch and conditional move when unpredictable can help us write code with better performance when the scenario gets so complex that the compiler can not optimize them automatically.</p>
-</tr></td><tr><td><p><strong>Branch prediction.</strong></p>
-<p>With a sorted array, the condition <code>data[c] &gt;= 128</code> is first <code>false</code> for a streak of values, then becomes <code>true</code> for all later values. That's easy to predict. With an unsorted array, you pay for the branching cost.</p>
-</tr></td><tr><td><p><strong>You are a victim of <a href="//en.wikipedia.org/wiki/Branch_predictor" rel="noreferrer">branch prediction</a> fail.</strong></p>
-<hr />
-<h2>What is Branch Prediction?</h2>
-<p>Consider a railroad junction:</p>
-<p><a href="//commons.wikimedia.org/wiki/File:Entroncamento_do_Transpraia.JPG" rel="noreferrer"><img src="https://i.stack.imgur.com/muxnt.jpg" alt="Image showing a railroad junction" /></a>
-<sub><a href="//commons.wikimedia.org/wiki/File:Entroncamento_do_Transpraia.JPG" rel="noreferrer">Image</a> by Mecanismo, via Wikimedia Commons. Used under the <a href="//creativecommons.org/licenses/by-sa/3.0/deed.en" rel="noreferrer">CC-By-SA 3.0</a> license.</sub></p>
-<p>Now for the sake of argument, suppose this is back in the 1800s - before long distance or radio communication.</p>
-<p>You are the operator of a junction and you hear a train coming. You have no idea which way it is supposed to go. You stop the train to ask the driver which direction they want. And then you set the switch appropriately.</p>
-<p><em>Trains are heavy and have a lot of inertia. So they take forever to start up and slow down.</em></p>
-<p>Is there a better way? You guess which direction the train will go!</p>
 <ul>
-<li>If you guessed right, it continues on.</li>
-<li>If you guessed wrong, the captain will stop, back up, and yell at you to flip the switch. Then it can restart down the other path.</li>
+<li><p>The truth is that <code>false</code> is not <code>true</code> (that's why <code>!false</code> results
+in <strong><code>true</code></strong>)</p></li>
+<li><p>The truth is that <code>true</code> is not <code>false</code> (that's why <code>!true</code> results
+in <strong><code>false</code></strong>)</p></li>
 </ul>
-<p><strong>If you guess right every time</strong>, the train will never have to stop. <br/>
-<strong>If you guess wrong too often</strong>, the train will spend a lot of time stopping, backing up, and restarting.</p>
-<hr />
-<p><strong>Consider an if-statement:</strong> At the processor level, it is a branch instruction:</p>
-<p><img src="https://i.stack.imgur.com/pyfwC.png" alt="Screenshot of compiled code containing an if statement" /></p>
-<p>You are a processor and you see a branch. You have no idea which way it will go. What do you do? You halt execution and wait until the previous instructions are complete. Then you continue down the correct path.</p>
-<p><em>Modern processors are complicated and have long pipelines. So they take forever to &quot;warm up&quot; and &quot;slow down&quot;.</em></p>
-<p>Is there a better way? You guess which direction the branch will go!</p>
-<ul>
-<li>If you guessed right, you continue executing.</li>
-<li>If you guessed wrong, you need to flush the pipeline and roll back to the branch. Then you can restart down the other path.</li>
-</ul>
-<p><strong>If you guess right every time</strong>, the execution will never have to stop. <br/>
-<strong>If you guess wrong too often</strong>, you spend a lot of time stalling, rolling back, and restarting.</p>
-<hr />
-<p>This is branch prediction. I admit it's not the best analogy since the train could just signal the direction with a flag. But in computers, the processor doesn't know which direction a branch will go until the last moment.</p>
-<p>So how would you strategically guess to minimize the number of times that the train must back up and go down the other path? You look at the past history! If the train goes left 99% of the time, then you guess left. If it alternates, then you alternate your guesses. If it goes one way every three times, you guess the same...</p>
-<p><em><strong>In other words, you try to identify a pattern and follow it.</strong></em> This is more or less how branch predictors work.</p>
-<p>Most applications have well-behaved branches. So modern branch predictors will typically achieve &gt;90% hit rates. But when faced with unpredictable branches with no recognizable patterns, branch predictors are virtually useless.</p>
-<p>Further reading: <a href="//en.wikipedia.org/wiki/Branch_predictor" rel="noreferrer">&quot;Branch predictor&quot; article on Wikipedia</a>.</p>
-<hr />
-<h2>As hinted from above, the culprit is this if-statement:</h2>
-<pre><code>if (data[c] &gt;= 128)
-    sum += data[c];
-</code></pre>
-<p>Notice that the data is evenly distributed between 0 and 255. When the data is sorted, roughly the first half of the iterations will not enter the if-statement. After that, they will all enter the if-statement.</p>
-<p>This is very friendly to the branch predictor since the branch consecutively goes the same direction many times. Even a simple saturating counter will correctly predict the branch except for the few iterations after it switches direction.</p>
-<p><strong>Quick visualization:</strong></p>
-<pre><code>T = branch taken
-N = branch not taken
-
-data[] = 0, 1, 2, 3, 4, ... 126, 127, 128, 129, 130, ... 250, 251, 252, ...
-branch = N  N  N  N  N  ...   N    N    T    T    T  ...   T    T    T  ...
-
-       = NNNNNNNNNNNN ... NNNNNNNTTTTTTTTT ... TTTTTTTTTT  (easy to predict)
-</code></pre>
-<p>However, when the data is completely random, the branch predictor is rendered useless, because it can't predict random data. Thus there will probably be around 50% misprediction (no better than random guessing).</p>
-<pre><code>data[] = 226, 185, 125, 158, 198, 144, 217, 79, 202, 118,  14, 150, 177, 182, 133, ...
-branch =   T,   T,   N,   T,   T,   T,   T,  N,   T,   N,   N,   T,   T,   T,   N  ...
-
-       = TTNTTTTNTNNTTTN ...   (completely random - hard to predict)
-</code></pre>
-<hr />
-<p><strong>So what can be done?</strong></p>
-<p>If the compiler isn't able to optimize the branch into a conditional move, you can try some hacks if you are willing to sacrifice readability for performance.</p>
-<p>Replace:</p>
-<pre><code>if (data[c] &gt;= 128)
-    sum += data[c];
-</code></pre>
-<p>with:</p>
-<pre><code>int t = (data[c] - 128) &gt;&gt; 31;
-sum += ~t &amp; data[c];
-</code></pre>
-<p>This eliminates the branch and replaces it with some bitwise operations.</p>
-<p><sub>(Note that this hack is not strictly equivalent to the original if-statement. But in this case, it's valid for all the input values of <code>data[]</code>.)</sub></p>
-<p><strong>Benchmarks: Core i7 920 @ 3.5 GHz</strong></p>
-<p>C++ - Visual Studio 2010 - x64 Release</p>
-<pre><code>//  Branch - Random
-seconds = 11.777
-
-//  Branch - Sorted
-seconds = 2.352
-
-//  Branchless - Random
-seconds = 2.564
-
-//  Branchless - Sorted
-seconds = 2.587
-</code></pre>
-<p>Java - NetBeans 7.1.1 JDK 7 - x64</p>
-<pre><code>//  Branch - Random
-seconds = 10.93293813
-
-//  Branch - Sorted
-seconds = 5.643797077
-
-//  Branchless - Random
-seconds = 3.113581453
-
-//  Branchless - Sorted
-seconds = 3.186068823
-</code></pre>
-<p>Observations:</p>
-<ul>
-<li><strong>With the Branch:</strong> There is a huge difference between the sorted and unsorted data.</li>
-<li><strong>With the Hack:</strong> There is no difference between sorted and unsorted data.</li>
-<li>In the C++ case, the hack is actually a tad slower than with the branch when the data is sorted.</li>
-</ul>
-<p>A general rule of thumb is to avoid data-dependent branching in critical loops (such as in this example).</p>
-<hr />
-<p><strong>Update:</strong></p>
-<ul>
-<li><p>GCC 4.6.1 with <code>-O3</code> or <code>-ftree-vectorize</code> on x64 is able to generate a conditional move. So there is no difference between the sorted and unsorted data - both are fast.</p>
-<p>(Or somewhat fast: for the already-sorted case, <code>cmov</code> can be slower especially if GCC puts it on the critical path instead of just <code>add</code>, especially on Intel before Broadwell where <code>cmov</code> has 2 cycle latency: <a href="https://stackoverflow.com/questions/28875325/gcc-optimization-flag-o3-makes-code-slower-than-o2">gcc optimization flag -O3 makes code slower than -O2</a>)</p>
-</li>
-<li><p>VC++ 2010 is unable to generate conditional moves for this branch even under <code>/Ox</code>.</p>
-</li>
-<li><p><a href="https://en.wikipedia.org/wiki/Intel_C%2B%2B_Compiler" rel="noreferrer">Intel C++ Compiler</a> (ICC) 11 does something miraculous. It <a href="https://en.wikipedia.org/wiki/Loop_interchange" rel="noreferrer">interchanges the two loops</a>, thereby hoisting the unpredictable branch to the outer loop. So not only is it immune to the mispredictions, it is also twice as fast as whatever VC++ and GCC can generate! In other words, ICC took advantage of the test-loop to defeat the benchmark...</p>
-</li>
-<li><p>If you give the Intel compiler the branchless code, it just out-right vectorizes it... and is just as fast as with the branch (with the loop interchange).</p>
-</li>
-</ul>
-<p>This goes to show that even mature modern compilers can vary wildly in their ability to optimize code...</p>
-</tr></td><tr><td><p>This question has already been answered excellently many times over. Still I'd like to draw the group's attention to yet another interesting analysis.</p>
-
-<p>Recently this example (modified very slightly) was also used as a way to demonstrate how a piece of code can be profiled within the program itself on Windows. Along the way, the author also shows how to use the results to determine where the code is spending most of its time in both the sorted &amp; unsorted case. Finally the piece also shows how to use a little known feature of the HAL (Hardware Abstraction Layer) to determine just how much branch misprediction is happening in the unsorted case.</p>
-
-<p>The link is here:
-<a href="http://www.geoffchappell.com/studies/windows/km/ntoskrnl/api/ex/profile/demo.htm">http://www.geoffchappell.com/studies/windows/km/ntoskrnl/api/ex/profile/demo.htm</a></p>
-</tr></td><tr><td><p><strong>Branch-prediction gain!</strong></p>
-<p>It is important to understand that branch misprediction doesn't slow down programs. The cost of a missed prediction is just as if branch prediction didn't exist and you waited for the evaluation of the expression to decide what code to run (further explanation in the next paragraph).</p>
-<pre><code>if (expression)
-{
-    // Run 1
-} else {
-    // Run 2
-}
-</code></pre>
-<p>Whenever there's an <code>if-else</code> \ <code>switch</code> statement, the expression has to be evaluated to determine which block should be executed. In the assembly code generated by the compiler, conditional <a href="https://en.wikipedia.org/wiki/Branch_(computer_science)" rel="noreferrer">branch</a> instructions are inserted.</p>
-<p>A branch instruction can cause a computer to begin executing a different instruction sequence and thus deviate from its default behavior of executing instructions in order (i.e. if the expression is false, the program skips the code of the <code>if</code> block) depending on some condition, which is the expression evaluation in our case.</p>
-<p>That being said, the compiler tries to predict the outcome prior to it being actually evaluated. It will fetch instructions from the <code>if</code> block, and if the expression turns out to be true, then wonderful! We gained the time it took to evaluate it and made progress in the code; if not then we are running the wrong code, the pipeline is flushed, and the correct block is run.</p>
-<h3>Visualization:</h3>
-<p>Let's say you need to pick route 1 or route 2. Waiting for your partner to check the map, you have stopped at ## and waited, or you could just pick route1 and if you were lucky (route 1 is the correct route), then great you didn't have to wait for your partner to check the map (you saved the time it would have taken him to check the map), otherwise you will just turn back.</p>
-<p>While flushing pipelines is super fast, nowadays taking this gamble is worth it. Predicting sorted data or a data that changes slowly is always easier and better than predicting fast changes.</p>
-<pre><code> O      Route 1  /-------------------------------
-/|\             /
- |  ---------##/
-/ \            \
-                \
-        Route 2  \--------------------------------
-</code></pre>
-</tr></td><tr><td><p>An official answer would be from</p>
-
-<ol>
-<li><a href="https://software.intel.com/en-us/articles/avoiding-the-cost-of-branch-misprediction" rel="noreferrer">Intel - Avoiding the Cost of Branch Misprediction</a></li>
-<li><a href="https://software.intel.com/en-us/articles/branch-and-loop-reorganization-to-prevent-mispredicts" rel="noreferrer">Intel - Branch and Loop Reorganization to Prevent Mispredicts</a></li>
-<li><a href="https://scholar.google.com/scholar?q=branch%20prediction%20computer%20architecture&amp;hl=da&amp;as_sdt=0&amp;as_vis=1&amp;oi=scholart" rel="noreferrer">Scientific papers - branch prediction computer architecture</a></li>
-<li>Books: J.L. Hennessy, D.A. Patterson: Computer architecture: a quantitative approach</li>
-<li>Articles in scientific publications: T.Y. Yeh, Y.N. Patt made a lot of these on branch predictions.</li>
-</ol>
-
-<p>You can also see from this lovely <a href="https://en.wikipedia.org/wiki/Branch_predictor#/media/File:Branch_prediction_2bit_saturating_counter-dia.svg" rel="noreferrer">diagram</a> why the branch predictor gets confused.</p>
-
-<p><a href="https://i.stack.imgur.com/pBMV2.png" rel="noreferrer"><img src="https://i.stack.imgur.com/pBMV2.png" alt="2-bit state diagram"></a></p>
-
-<p>Each element in the original code is a random value</p>
-
-<pre><code>data[c] = std::rand() % 256;
-</code></pre>
-
-<p>so the predictor will change sides as the <code>std::rand()</code> blow.</p>
-
-<p>On the other hand, once it's sorted, the predictor will first move into a state of strongly not taken and when the values change to the high value the predictor will in three runs through change all the way from strongly not taken to strongly taken.</p>
 
 <hr>
-</tr></td><tr><td><p>Frequently used Boolean operations in C++ produce many branches in the compiled program. If these branches are inside loops and are hard to predict they can slow down execution significantly. Boolean variables are stored as 8-bit integers with the value <code>0</code> for <code>false</code> and <code>1</code> for <code>true</code>.</p>
 
-<p>Boolean variables are overdetermined in the sense that all operators that have Boolean variables as input check if the inputs have any other value than <code>0</code> or <code>1</code>, but operators that have Booleans as output can produce no other value than <code>0</code> or <code>1</code>. This makes operations with Boolean variables as input less efficient than necessary.
-Consider example:</p>
-
-<pre><code>bool a, b, c, d;
-c = a &amp;&amp; b;
-d = a || b;
-</code></pre>
-
-<p>This is typically implemented by the compiler in the following way:</p>
-
-<pre><code>bool a, b, c, d;
-if (a != 0) {
-    if (b != 0) {
-        c = 1;
-    }
-    else {
-        goto CFALSE;
-    }
-}
-else {
-    CFALSE:
-    c = 0;
-}
-if (a == 0) {
-    if (b == 0) {
-        d = 0;
-    }
-    else {
-        goto DTRUE;
-    }
-}
-else {
-    DTRUE:
-    d = 1;
-}
-</code></pre>
-
-<p>This code is far from optimal. The branches may take a long time in case of mispredictions. The Boolean operations can be made much more efficient if it is known with certainty that the operands have no other values than <code>0</code> and <code>1</code>. The reason why the compiler does not make such an assumption is that the variables might have other values if they are uninitialized or come from unknown sources. The above code can be optimized if <code>a</code> and <code>b</code> has been initialized to valid values or if they come from operators that produce Boolean output. The optimized code looks like this:</p>
-
-<pre><code>char a = 0, b = 1, c, d;
-c = a &amp; b;
-d = a | b;
-</code></pre>
-
-<p><code>char</code> is used instead of <code>bool</code> in order to make it possible to use the bitwise operators (<code>&amp;</code> and <code>|</code>) instead of the Boolean operators (<code>&amp;&amp;</code> and <code>||</code>). The bitwise operators are single instructions that take only one clock cycle. The OR operator (<code>|</code>) works even if <code>a</code> and <code>b</code> have other values than <code>0</code> or <code>1</code>. The AND operator (<code>&amp;</code>) and the EXCLUSIVE OR operator (<code>^</code>) may give inconsistent results if the operands have other values than <code>0</code> and <code>1</code>.</p>
-
-<p><code>~</code> can not be used for NOT. Instead, you can make a Boolean NOT on a variable which is known to be <code>0</code> or <code>1</code> by XOR'ing it with <code>1</code>:</p>
-
-<pre><code>bool a, b;
-b = !a;
-</code></pre>
-
-<p>can be optimized to:</p>
-
-<pre><code>char a = 0, b;
-b = a ^ 1;
-</code></pre>
-
-<p><code>a &amp;&amp; b</code> cannot be replaced with <code>a &amp; b</code> if <code>b</code> is an expression that should not be evaluated if <code>a</code> is <code>false</code> ( <code>&amp;&amp;</code> will not evaluate <code>b</code>, <code>&amp;</code> will). Likewise, <code>a || b</code> can not be replaced with <code>a | b</code> if <code>b</code> is an expression that should not be evaluated if <code>a</code> is <code>true</code>.</p>
-
-<p>Using bitwise operators is more advantageous if the operands are variables than if the operands are comparisons:</p>
-
-<pre><code>bool a; double x, y, z;
-a = x &gt; y &amp;&amp; z &lt; 5.0;
-</code></pre>
-
-<p>is optimal in most cases (unless you expect the <code>&amp;&amp;</code> expression to generate many branch mispredictions).</p>
-</tr></td><tr><td><p>In the same line (I think this was not highlighted by any answer) it's good to mention that sometimes (specially in software where the performance matters—like in the Linux kernel) you can find some if statements like the following:</p>
-
-<pre><code>if (likely( everything_is_ok ))
-{
-    /* Do something */
-}
-</code></pre>
-
-<p>or similarly:</p>
-
-<pre><code>if (unlikely(very_improbable_condition))
-{
-    /* Do something */    
-}
-</code></pre>
-
-<p>Both <code>likely()</code> and <code>unlikely()</code> are in fact macros that are defined by using something like the GCC's <code>__builtin_expect</code> to help the compiler insert prediction code to favour the condition taking into account the information provided by the user. GCC supports other builtins that could change the behavior of the running program or emit low level instructions like clearing the cache, etc. See <a href="https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html" rel="noreferrer">this documentation</a> that goes through the available GCC's builtins.</p>
-
-<p>Normally this kind of optimizations are mainly found in hard-real time applications or embedded systems where execution time matters and it's critical. For example, if you are checking for some error condition that only happens 1/10000000 times, then why not inform the compiler about this? This way, by default, the branch prediction would assume that the condition is false.</p>
-</tr></td><tr><td><p>The above behavior is happening because of Branch prediction.</p>
-
-<p>To understand branch prediction one must first understand <strong>Instruction Pipeline</strong>:</p>
-
-<p>Any instruction is broken into a sequence of steps so that different steps can be executed concurrently in parallel. This technique is known as instruction pipeline and this is used to increase throughput in modern processors. To understand this better please see this <a href="https://en.wikipedia.org/wiki/Pipeline_(computing)#Concept_and_motivation" rel="noreferrer">example on Wikipedia</a>.</p>
-
-<p>Generally, modern processors have quite long pipelines, but for ease let's consider these 4 steps only.</p>
-
-<ol>  
-  <li>IF -- Fetch the instruction from memory 
-  <li>ID -- Decode the instruction
-  <li>EX -- Execute the instruction 
-  <li>WB -- Write back to CPU register
-</ol>
-
-<p><strong><em>4-stage pipeline in general for 2 instructions.</em></strong>
-<img src="https://i.stack.imgur.com/PqBBR.png" alt="4-stage pipeline in general"></p>
-
-<p>Moving back to the above question let's consider the following instructions:</p>
-
-<pre><code>                        A) if (data[c] &gt;= 128)
-                                /\
-                               /  \
-                              /    \
-                        true /      \ false
-                            /        \
-                           /          \
-                          /            \
-                         /              \
-              B) sum += data[c];          C) for loop or print().
-</code></pre>
-
-<p>Without branch prediction, the following would occur:</p>
-
-<p>To execute instruction B or instruction C the processor will have to wait till the instruction A doesn't reach till EX stage in the pipeline, as the decision to go to instruction B or instruction C depends on the result of instruction A. So the pipeline will look like this.</p>
-
-<p><strong><em>when if condition returns true:</em></strong>
-<img src="https://i.stack.imgur.com/0H4gP.png" alt="enter image description here"></p>
-
-<p><strong><em>When if condition returns false:</em></strong>
-<img src="https://i.stack.imgur.com/APpca.png" alt="enter image description here"></p>
-
-<p>As a result of waiting for the result of instruction A, the total CPU cycles spent in the above case (without branch prediction; for both true and false) is 7.</p>
-
-<p><strong>So what is branch prediction?</strong></p>
-
-<p>Branch predictor will try to guess which way a branch (an if-then-else structure) will go before this is known for sure. It will not wait for the instruction A to reach the EX stage of the pipeline, but it will guess the decision and go to that instruction (B or C in case of our example).</p>
-
-<p><strong><em>In case of a correct guess, the pipeline looks something like this:</em></strong>
-<img src="https://i.stack.imgur.com/ZYUbs.png" alt="enter image description here"></p>
-
-<p>If it is later detected that the guess was wrong then the partially executed instructions are discarded and the pipeline starts over with the correct branch, incurring a delay. 
-The time that is wasted in case of a branch misprediction is equal to the number of stages in the pipeline from the fetch stage to the execute stage. Modern microprocessors tend to have quite long pipelines so that the misprediction delay is between 10 and 20 clock cycles. The longer the pipeline the greater the need for a good <a href="https://en.wikipedia.org/wiki/Branch_predictor" rel="noreferrer">branch predictor</a>.</p>
-
-<p>In the OP's code, the first time when the conditional, the branch predictor does not have any information to base up prediction, so the first time it will randomly choose the next instruction. Later in the for loop, it can base the prediction on the history. 
-For an array sorted in ascending order, there are three possibilities:</p>
-
-<ol>
-<li> All the elements are less than 128
-<li> All the elements are greater than 128
-<li> Some starting new elements are less than 128 and later it become greater than 128
-</ol>
-
-<p>Let us assume that the predictor will always assume the true branch on the first run.</p>
-
-<p>So in the first case, it will always take the true branch since historically all its predictions are correct.
-In the 2nd case, initially it will predict wrong, but after a few iterations, it will predict correctly.
-In the 3rd case, it will initially predict correctly till the elements are less than 128. After which it will fail for some time and the correct itself when it sees branch prediction failure in history. </p>
-
-<p>In all these cases the failure will be too less in number and as a result, only a few times it will need to discard the partially executed instructions and start over with the correct branch, resulting in fewer CPU cycles. </p>
-
-<p>But in case of a random unsorted array, the prediction will need to discard the partially executed instructions and start over with the correct branch most of the time and result in more CPU cycles compared to the sorted array.</p>
-</tr></td><tr><td><p><em><a href="https://stackoverflow.blog/2019/10/11/c-creator-bjarne-stroustrup-answers-our-top-five-c-questions/">Bjarne Stroustrup's Answer</a> to this question:</em></p>
-
-<p>That sounds like an interview question. Is it true? How would you know? It is a bad idea to answer questions about efficiency without first doing some measurements, so it is important to know how to measure.</p>
-
-<p>So, I tried with a vector of a million integers and got:</p>
-
-<pre><code>Already sorted    32995 milliseconds
-Shuffled          125944 milliseconds
-
-Already sorted    18610 milliseconds
-Shuffled          133304 milliseconds
-
-Already sorted    17942 milliseconds
-Shuffled          107858 milliseconds
-</code></pre>
-
-<p>I ran that a few times to be sure. Yes, the phenomenon is real. My key code was:</p>
-
-<pre><code>void run(vector&lt;int&gt;&amp; v, const string&amp; label)
-{
-    auto t0 = system_clock::now();
-    sort(v.begin(), v.end());
-    auto t1 = system_clock::now();
-    cout &lt;&lt; label 
-         &lt;&lt; duration_cast&lt;microseconds&gt;(t1 — t0).count() 
-         &lt;&lt; " milliseconds\n";
-}
-
-void tst()
-{
-    vector&lt;int&gt; v(1'000'000);
-    iota(v.begin(), v.end(), 0);
-    run(v, "already sorted ");
-    std::shuffle(v.begin(), v.end(), std::mt19937{ std::random_device{}() });
-    run(v, "shuffled    ");
-}
-</code></pre>
-
-<p>At least the phenomenon is real with this compiler, standard library, and optimizer settings. Different implementations can and do give different answers. In fact, someone did do a more systematic study (a quick web search will find it) and most implementations show that effect.</p>
-
-<p>One reason is branch prediction: the key operation in the sort algorithm is <code>“if(v[i] &lt; pivot]) …”</code> or equivalent. For a sorted sequence that test is always true whereas, for a random sequence, the branch chosen varies randomly.</p>
-
-<p>Another reason is that when the vector is already sorted, we never need to move elements to their correct position. The effect of these little details is the factor of five or six that we saw.</p>
-
-<p>Quicksort (and sorting in general) is a complex study that has attracted some of the greatest minds of computer science. A good sort function is a result of both choosing a good algorithm and paying attention to hardware performance in its implementation.</p>
-
-<p>If you want to write efficient code, you need to know a bit about machine architecture.</p>
-</tr></td><tr><td><p>It's about branch prediction. What is it?</p>
+<p><strong><code>!!</code></strong> determines the "truth" of what a value is <em>not</em> not:</p>
 
 <ul>
-<li><p>A branch predictor is one of the ancient performance improving techniques which still finds relevance into modern architectures. While the simple prediction techniques provide fast lookup and power efficiency they suffer from a high misprediction rate.</p></li>
-<li><p>On the other hand, complex branch predictions –either neural based or variants of two-level branch prediction –provide better prediction accuracy, but they consume more power and complexity increases exponentially.</p></li>
-<li><p>In addition to this, in complex prediction techniques the time taken to predict the branches is itself very high –ranging from 2 to 5 cycles –which is comparable to the execution time of actual branches.</p></li>
-<li><p>Branch prediction is essentially an optimization (minimization) problem where the emphasis is on to achieve lowest possible miss rate, low power consumption, and low complexity with minimum resources.</p></li>
+<li><p>The truth is that <code>true</code> is not <em>not</em> <code>true</code> (that's why <code>!!true</code> results in <strong><code>true</code></strong>)</p></li>
+<li><p>The truth is that <code>false</code> is not <em>not</em> <code>false</code> (that's why <code>!!false</code> results in <strong><code>false</code></strong>)</p></li>
 </ul>
 
-<p>There really are three different kinds of branches:</p>
+<hr>
 
-<p><strong>Forward conditional branches</strong> - based on a run-time condition, the PC (program counter) is changed to point to an address forward in the instruction stream.</p>
+<p>What we wish to determine in the comparison is the "truth" <em>about</em> the value of a reference, not the <em>value of</em> the reference itself. There is a use-case where we might want to know the truth about a value, even if we expect the value to be <em><code>false</code></em> (or falsey), or if we expect the value not to be typeof <code>boolean</code>. </p>
 
-<p><strong>Backward conditional branches</strong> - the PC is changed to point backward in the instruction stream. The branch is based on some condition, such as branching backwards to the beginning of a program loop when a test at the end of the loop states the loop should be executed again.</p>
+<hr>
 
-<p><strong>Unconditional branches</strong> - this includes jumps, procedure calls and returns that have no specific condition. For example, an unconditional jump instruction might be coded in assembly language as simply "jmp", and the instruction stream must immediately be directed to the target location pointed to by the jump instruction, whereas a conditional jump that might be coded as "jmpne" would redirect the instruction stream only if the result of a comparison of two values in a previous "compare" instructions shows the values to not be equal. (The segmented addressing scheme used by the x86 architecture adds extra complexity, since jumps can be either "near" (within a segment) or "far" (outside the segment). Each type has different effects on branch prediction algorithms.)</p>
+<p><strong>In practice:</strong></p>
 
-<p><strong>Static/dynamic Branch Prediction</strong>: Static branch prediction is used by the microprocessor the first time a conditional branch is encountered, and dynamic branch prediction is used for succeeding executions of the conditional branch code.</p>
+<p>Consider a concise function which detects feature functionality (and in this case, platform compatibility) by way of <strong><a href="http://en.wikipedia.org/wiki/Type_system#Dynamic_typing" rel="noreferrer">dynamic typing</a></strong> (aka "duck typing"). We want to write a function that returns <code>true</code> if a user's browser supports the HTML5 <code>&lt;audio&gt;</code> element, but we don't want the function to throw an error if <code>&lt;audio&gt;</code> is undefined; and we don't want to use <code>try ... catch</code> to handle any possible errors (because they're gross); <em>and also</em> we don't want to use a check inside the function that won't consistently reveal the truth about the feature (for example, <code>document.createElement('audio')</code> will still create an element called <code>&lt;audio&gt;</code> even if HTML5 <code>&lt;audio&gt;</code> is not supported). </p>
 
-<p>References:</p>
+<hr>
+
+<p>Here are the three approaches:</p>
+
+<pre><code>// this won't tell us anything about HTML5 `&lt;audio&gt;` as a feature
+var foo = function(tag, atr) { return document.createElement(tag)[atr]; }
+
+// this won't return true if the feature is detected (although it works just fine)
+var bar = function(tag, atr) { return !document.createElement(tag)[atr]; }
+
+// this is the concise, feature-detecting solution we want
+var baz = function(tag, atr) { return !!document.createElement(tag)[atr]; }
+
+foo('audio', 'preload'); // returns "auto"
+bar('audio', 'preload'); // returns false
+baz('audio', 'preload'); // returns true
+</code></pre>
+
+<p>Each function accepts an argument for a <code>&lt;tag&gt;</code> and an <code>attribute</code> to look for, but they each return different values based on what the comparisons determine. </p>
+
+<p><strong>But wait, there's more!</strong></p>
+
+<p>Some of you probably noticed that in this specific example, one could simply check for a property using the slightly <strong><a href="http://jsperf.com/hasownproperty-vs-comparison" rel="noreferrer">more performant</a></strong> means of checking if the object in question <em>has</em> a property. There are two ways to do this:</p>
+
+<pre><code>// the native `hasOwnProperty` method
+var qux = function(tag, atr) { return document.createElement(tag).hasOwnProperty(atr); }
+
+// the `in` operator
+var quux = function(tag, atr) { return atr in document.createElement(tag); }
+
+qux('audio', 'preload');  // returns true
+quux('audio', 'preload'); // returns true
+</code></pre>
+
+<p><strong>We digress...</strong></p>
+
+<p>However rare these situations may be, there may exist a few scenarios where the most concise, most performant, and thus most preferred means of getting <code>true</code> from a non-boolean, possibly undefined value is indeed by using <code>!!</code>. Hopefully this ridiculously clears it up.</p>
+</tr></td><tr><td><p><code>!!expr</code> returns a Boolean value (<code>true</code> or <code>false</code>) depending on the <em>truthiness</em> of the expression. It makes more sense when used on non-boolean types. Consider these examples, especially the 3rd example and onward:</p>
+<pre><code>          !!false === false
+           !!true === true
+
+              !!0 === false
+!!parseInt(&quot;foo&quot;) === false // NaN is falsy
+              !!1 === true
+             !!-1 === true  // -1 is truthy
+          !!(1/0) === true  // Infinity is truthy
+
+             !!&quot;&quot; === false // empty string is falsy
+          !!&quot;foo&quot; === true  // non-empty string is truthy
+        !!&quot;false&quot; === true  // ...even if it contains a falsy value
+
+     !!window.foo === false // undefined is falsy
+           !!null === false // null is falsy
+
+             !!{} === true  // an (empty) object is truthy
+             !![] === true  // an (empty) array is truthy; PHP programmers beware!
+</code></pre>
+</tr></td><tr><td><p>This is a really handy way to check for undefined, "undefined", null, "null", ""</p>
+
+<pre><code>if (!!var1 &amp;&amp; !!var2 &amp;&amp; !!var3 &amp;&amp; !!var4 ){
+   //... some code here
+}
+</code></pre>
+</tr></td><tr><td><pre><code>a = 1;
+alert(!a) // -&gt; false : a is not not defined
+alert(!!a) // -&gt; true : a is not not defined
+</code></pre>
+
+<p>For <code>!a</code>, it checks whether <code>a</code> is <strong>NOT</strong> defined, while <code>!!a</code> checks if the variable is defined.</p>
+
+<p><code>!!a</code> is the same as <code>!(!a)</code>. If <code>a</code> is defined, <code>a</code> is <code>true</code>, <code>!a</code> is <code>false</code>, and <code>!!a</code> is <code>true</code>.</p>
+</tr></td><tr><td><p>The <code>!!</code> construct is a simple way of turning any JavaScript expression into
+its Boolean equivalent. </p>
+
+<p>For example: <code>!!"he shot me down" === true</code> and <code>!!0 === false</code>.</p>
+</tr></td><tr><td><p>Tons of great answers here, but if you've read down this far, this helped me to 'get it'. Open the console on Chrome (etc), and start typing:</p>
+
+<pre><code>!(!(1))
+!(!(0))
+!(!('truthy')) 
+!(!(null))
+!(!(''))
+!(!(undefined))
+!(!(new Object())
+!(!({}))
+woo = 'hoo'
+!(!(woo))
+...etc, etc, until the light goes on ;)
+</code></pre>
+
+<p>Naturally, these are all the same as merely typing !!someThing, but the added parentheses might help make it more understandable.</p>
+</tr></td><tr><td><p><code>!!x</code> is shorthand for <code>Boolean(x)</code></p>
+
+<p>The first bang forces the js engine to run <code>Boolean(x)</code> but also has the side effect of inverting the value.  So the second bang undoes the side effect.</p>
+</tr></td><tr><td><p>The <code>if</code> and <code>while</code> statements and the <code>?</code> operator use truth values to determine which branch of code to run. For example, zero and NaN numbers and the empty string are false, but other numbers and strings are true. Objects are true, but the undefined value and <code>null</code> are both false.</p>
+
+<p>The double negation operator <code>!!</code> calculates the truth value of a value. It's actually two operators, where <code>!!x</code> means <code>!(!x)</code>, and behaves as follows:</p>
 
 <ul>
-<li><p><em><a href="https://en.wikipedia.org/wiki/Branch_predictor" rel="noreferrer">Branch predictor</a></em></p></li>
-<li><p><em><a href="http://www.geoffchappell.com/studies/windows/km/ntoskrnl/api/ex/profile/demo.htm" rel="noreferrer">A Demonstration of Self-Profiling</a></em></p></li>
-<li><p><em><a href="https://courses.cs.washington.edu/courses/csep548/06au/lectures/branchPred.pdf" rel="noreferrer">Branch Prediction Review</a></em></p></li>
-<li><p><em><a href="https://web.njit.edu/~rlopes/Mod5.3.pdf" rel="noreferrer">Branch Prediction</a></em></p></li>
+<li>If <code>x</code> is a false value, <code>!x</code> is <code>true</code>, and <code>!!x</code> is <code>false</code>.</li>
+<li>If <code>x</code> is a true value, <code>!x</code> is <code>false</code>, and <code>!!x</code> is <code>true</code>.</li>
 </ul>
-</tr></td><tr><td><p>That's for sure!...</p>
-<p><strong>Branch prediction</strong> makes the logic run slower, because of the switching which happens in your code! It's like you are going a straight street or a street with a lot of turnings, for sure the straight one is going to be done quicker!...</p>
-<p>If the array is sorted, your condition is false at the first step: <code>data[c] &gt;= 128</code>, then becomes a true value for the whole way to the end of the street. That's how you get to the end of the logic faster. On the other hand, using an unsorted array, you need a lot of turning and processing which make your code run slower for sure...</p>
-<p>Look at the image I created for you below. Which street is going to be finished faster?</p>
-<p><a href="https://i.stack.imgur.com/cSmCa.jpg" rel="noreferrer"><img src="https://i.stack.imgur.com/cSmCa.jpg" alt="Branch Prediction" /></a></p>
-<p>So programmatically, <strong>branch prediction</strong> causes the process to be slower...</p>
-<p>Also at the end, it's good to know we have two kinds of branch predictions that each is going to affect your code differently:</p>
-<p><strong>1. Static</strong></p>
-<p><strong>2. Dynamic</strong></p>
-<p><a href="https://i.stack.imgur.com/ZfhDu.jpg" rel="noreferrer"><img src="https://i.stack.imgur.com/ZfhDu.jpg" alt="Branch Prediction" /></a></p>
+
+<p>When used at the top level of a Boolean context (<code>if</code>, <code>while</code>, or <code>?</code>), the <code>!!</code> operator is behaviorally a no-op. For example, <code>if (x)</code> and <code>if (!!x)</code> mean the same thing.</p>
+
+<h2>Practical uses</h2>
+
+<p>However it has several practical uses.</p>
+
+<p>One use is to lossily compress an object to its truth value, so that your code isn't holding a reference to a big object and keeping it alive. Assigning <code>!!some_big_object</code> to a variable instead of <code>some_big_object</code> lets go of it for the garbage collector. This is useful for cases that produce either an object or a false value such as <code>null</code> or the undefined value, such as browser feature detection.</p>
+
+<p>Another use, which I mentioned in an <a href="https://stackoverflow.com/a/35525827/2738262">answer about C's corresponding <code>!!</code> operator</a>, is with "lint" tools that look for common typos and print diagnostics. For example, in both C and JavaScript, a few common typos for Boolean operations produce other behaviors whose output isn't quite as Boolean:</p>
+
+<ul>
+<li><code>if (a = b)</code> is assignment followed by use of the truth value of <code>b</code>; <code>if (a == b)</code> is an equality comparison.</li>
+<li><code>if (a &amp; b)</code> is a bitwise AND; <code>if (a &amp;&amp; b)</code> is a logical AND. <code>2 &amp; 5</code> is <code>0</code> (a false value); <code>2 &amp;&amp; 5</code> is true.</li>
+</ul>
+
+<p>The <code>!!</code> operator reassures the lint tool that what you wrote is what you meant: do this operation, then take the truth value of the result.</p>
+
+<p>A third use is to produce logical XOR and logical XNOR. In both C and JavaScript, <code>a &amp;&amp; b</code> performs a logical AND (true if both sides are true), and <code>a &amp; b</code> performs a bitwise AND. <code>a || b</code> performs a logical OR (true if at least one are true), and <code>a | b</code> performs a bitwise OR. There's a bitwise XOR (exclusive OR) as <code>a ^ b</code>, but there's no built-in operator for logical XOR (true if exactly one side is true). You might, for example, want to allow the user to enter text in exactly one of two fields. What you can do is convert each to a truth value and compare them: <code>!!x !== !!y</code>.</p>
+</tr></td><tr><td><p>I think worth mentioning is, that a condition combined with logical AND/OR will not return a boolean value but last success or first fail in case of &amp;&amp; and 
+first success or last fail in case of || of condition chain.</p>
+
+<pre><code>res = (1 &amp;&amp; 2); // res is 2
+res = (true &amp;&amp; alert) // res is function alert()
+res = ('foo' || alert) // res is 'foo'
+</code></pre>
+
+<p>In order to cast the condition to a true boolean literal we can use the double negation:</p>
+
+<pre><code>res = !!(1 &amp;&amp; 2); // res is true
+res = !!(true &amp;&amp; alert) // res is true
+res = !!('foo' || alert) // res is true
+</code></pre>
+</tr></td><tr><td><p>Use logical not operator two times<br>
+<strong>it means !true= false<br>
+ and  !!true = true</strong></p>
+</tr></td><tr><td><p>So many answers doing half the work. Yes, <code>!!X</code> could be read as &quot;the truthiness of X [represented as a boolean]&quot;. But <code>!!</code> isn't, practically speaking, so important for figuring out whether a single variable is (or even if many variables are) truthy or falsy. <code>!!myVar === true</code> is the same as just <code>myVar</code>. Comparing <code>!!X</code> to a &quot;real&quot; boolean isn't really useful.</p>
+<p>What you gain with <code>!!</code> is the ability to check the truthiness of multiple variables <em>against each other</em> in a repeatable, standardized (and JSLint friendly) fashion.</p>
+<h3>Simply casting :(</h3>
+<p>That is...</p>
+<ul>
+<li><code>0 === false</code> is <code>false</code>.</li>
+<li><code>!!0 === false</code> is <code>true</code>.</li>
+</ul>
+<p>The above's not so useful. <code>if (!0)</code> gives you the same results as <code>if (!!0 === false)</code>. I can't think of a good case for casting a variable to boolean and then comparing to a &quot;true&quot; boolean.</p>
+<p>See &quot;== and !=&quot; from <a href="http://old.jslint.com/lint.html" rel="noreferrer">JSLint's directions</a> (note: Crockford is moving his site around a bit; that link is liable to die at some point) for a little on why:</p>
 <blockquote>
-<p>Static branch prediction is used by the microprocessor the first time
-a conditional branch is encountered, and dynamic branch prediction is
-used for succeeding executions of the conditional branch code.</p>
-<p>In order to effectively write your code to take advantage of these
-rules, when writing <strong>if-else</strong> or <strong>switch</strong> statements, check the most
-common cases first and work progressively down to the least common.
-Loops do not necessarily require any special ordering of code for
-static branch prediction, as only the condition of the loop iterator
-is normally used.</p>
+<p>The == and != operators do type coercion before comparing. This is bad because it causes ' \t\r\n' == 0 to be true. This can mask type errors. JSLint cannot reliably determine if == is being used correctly, so it is best to not use == and != at all and to always use the more reliable === and !== operators instead.</p>
+<p>If you only care that a value is truthy or falsy, then use the short form. Instead of<br />
+<code>    (foo != 0)</code></p>
+<p>just say<br />
+<code>    (foo)</code></p>
+<p>and instead of<br />
+<code>    (foo == 0)</code></p>
+<p>say<br />
+<code>     (!foo)</code></p>
 </blockquote>
-</tr></td><tr><td><p>As what has already been mentioned by others, what behind the mystery is <a href="https://en.wikipedia.org/wiki/Branch_predictor" rel="noreferrer">Branch Predictor</a>. </p>
+<p>Note that there are some <a href="https://stackoverflow.com/a/3619813/1028230">unintuitive cases</a> where a boolean will be cast to a number (<code>true</code> is cast to <code>1</code> and <code>false</code> to <code>0</code>) when comparing a boolean to a number. In this case, <code>!!</code> might be mentally useful. Though, again, <strong>these are cases where you're comparing a non-boolean to a hard-typed boolean, which is, imo, a serious mistake.</strong> <code>if (-1)</code> is still the way to go here.</p>
+<pre><code>?????????????????????????????????????????????????????????????????????????
+?               Original                ?    Equivalent     ?  Result   ?
+?????????????????????????????????????????????????????????????????????????
+? if (-1 == true) console.log(&quot;spam&quot;)   ? if (-1 == 1)      ? undefined ?
+? if (-1 == false) console.log(&quot;spam&quot;)  ? if (-1 == 0)      ? undefined ?
+?   Order doesn't matter...             ?                   ?           ?
+? if (true == -1) console.log(&quot;spam&quot;)   ? if (1 == -1)      ? undefined ?
+?????????????????????????????????????????????????????????????????????????
+? if (!!-1 == true) console.log(&quot;spam&quot;) ? if (true == true) ? spam      ? better
+?????????????????????????????????????????????????????????????????????????
+? if (-1) console.log(&quot;spam&quot;)           ? if (truthy)       ? spam      ? still best
+?????????????????????????????????????????????????????????????????????????
+</code></pre>
+<p>And things get even crazier depending on your engine. WScript, for instance, wins the prize.</p>
+<pre><code>function test()
+{
+    return (1 === 1);
+}
+WScript.echo(test());
+</code></pre>
+<p>Because of <a href="https://stackoverflow.com/a/14462348/1028230">some historical Windows jive</a>, that'll output -1 in a message box! Try it in a cmd.exe prompt and see! But <code>WScript.echo(-1 == test())</code> still gives you 0, or WScript's <code>false</code>. <a href="https://www.google.com/search?q=look+away+I%27m+hideous" rel="noreferrer">Look away. It's hideous.</a></p>
+<h3>Comparing truthiness :)</h3>
+<p>But what if I have two values I need to check for equal truthi/falsi-ness?</p>
+<p>Pretend we have <code>myVar1 = 0;</code> and <code>myVar2 = undefined;</code>.</p>
+<ul>
+<li><code>myVar1 === myVar2</code> is <code>0 === undefined</code> and is obviously false.</li>
+<li><code>!!myVar1 === !!myVar2</code> is <code>!!0 === !!undefined</code> and is true! Same truthiness! (In this case, both &quot;have a truthiness of falsy&quot;.)</li>
+</ul>
+<p>So the only place you'd really need to use &quot;boolean-cast variables&quot; would be if you had a situation where you're checking if both variables have the <em>same</em> truthiness, right? That is, <b>use <code>!!</code> if you need to see if two vars are <em>both truthy or both falsy</em> (or not), that is, <em>of equal</em> (or not) <em>truthiness</em>.</b></p>
+<p>I can't think of a great, non-contrived use case for that offhand. Maybe you have &quot;linked&quot; fields in a form?</p>
+<pre><code>if (!!customerInput.spouseName !== !!customerInput.spouseAge ) {
+    errorObjects.spouse = &quot;Please either enter a valid name AND age &quot; 
+        + &quot;for your spouse or leave all spouse fields blank.&quot;;
+}
+</code></pre>
+<p>So now if you have a truthy for both <em>or</em> a falsy for both spouse name and age, you can continue. Otherwise you've only got one field with a value (or a very early arranged marriage) and need to create an extra error on your <code>errorObjects</code> collection.</p>
+<hr />
+<p><strong>EDIT 24 Oct 2017, 6 Feb 19:</strong></p>
+<h3>3rd party libraries that expect explicit Boolean values</h3>
+<p>Here's an interesting case... <code>!!</code> might be useful when 3rd party libs expect explicit Boolean values.</p>
+<p>For instance, <a href="https://react-cn.github.io/react/tips/false-in-jsx.html" rel="noreferrer">False in JSX (React) has a special meaning</a> that's not triggered on simple falsiness. If you tried returning something like the following in your JSX, expecting an int in <code>messageCount</code>...</p>
+<p><code>{messageCount &amp;&amp; &lt;div&gt;You have messages!&lt;/div&gt;}</code></p>
+<p>... you might be surprised to see React render a <code>0</code> when you have zero messages. You have to explicitly return false for JSX not to render. The above statement returns <code>0</code>, which JSX happily renders, as it should. It can't tell you didn't have <code>Count: {messageCount &amp;&amp; &lt;div&gt;Get your count to zero!&lt;/div&gt;}</code> (or something less contrived).</p>
+<ul>
+<li><p>One fix involves the bangbang, which coerces <code>0</code> into <code>!!0</code>, which is <code>false</code>:<br />
+<code>{!!messageCount &amp;&amp; &lt;div&gt;You have messages!&lt;/div&gt;}</code></p>
+</li>
+<li><p>JSX' docs suggest you be more explicit, write self-commenting code, and use a comparison to force to a Boolean.<br />
+<code>{messageCount &gt; 0 &amp;&amp; &lt;div&gt;You have messages!&lt;/div&gt;}</code></p>
+</li>
+<li><p>I'm more comfortable handling falsiness myself with a ternary --<br />
+<code>{messageCount ? &lt;div&gt;You have messages!&lt;/div&gt; : false}</code></p>
+</li>
+</ul>
+<p>Same deal in Typescript: If you have a function that returns a boolean (or you're assigning a value to a boolean variable), you [usually] can't return/assign a boolean-y value; it has to be a strongly typed boolean. This means, <strong>iff <code>myObject</code> is strongly typed</strong>, <code>return !myObject;</code> works for a function returning a boolean, but <code>return myObject;</code> doesn't. You have to <code>return !!myObject</code> to match Typescript's expectations.</p>
+<blockquote>
+<p>The exception for Typescript? If <code>myObject</code> was an <code>any</code>, you're back in JavaScript's Wild West and can return it without <code>!!</code>, even if your return type is a boolean.</p>
+</blockquote>
+<p>Keep in mind that <strong>these <em>are JSX &amp; Typescript conventions</em>, not ones inherent to JavaScript</strong>.</p>
+<p>But if you see strange <code>0</code>s in your rendered JSX, think loose falsy management.</p>
+</tr></td><tr><td><p>here is a piece of code from angular js </p>
 
-<p>I'm not trying to add something but explaining the concept in another way. 
-There is a concise introduction on the wiki which contains text and diagram.
-I do like the explanation below which uses a diagram to elaborate the Branch Predictor intuitively.</p>
+<pre><code>var requestAnimationFrame = $window.requestAnimationFrame ||
+                                $window.webkitRequestAnimationFrame ||
+                                $window.mozRequestAnimationFrame;
+
+ var rafSupported = !!requestAnimationFrame;
+</code></pre>
+
+<p>their intention is to set rafSupported to true or false based on the availability of function in requestAnimationFrame </p>
+
+<p>it can be achieved by checking in following way in general:</p>
+
+<pre><code>if(typeof  requestAnimationFrame === 'function')
+rafSupported =true;
+else
+rafSupported =false;
+</code></pre>
+
+<p>the short way could be using !!</p>
+
+<pre><code>rafSupported = !!requestAnimationFrame ;
+</code></pre>
+
+<p>so if requestAnimationFrame was assigned a function
+ then
+!requestAnimationFrame would be false and one more ! of it would be true</p>
+
+<p>if requestAnimationFrame was assinged undefined then
+!requestAnimationFrame would be true and one more ! of it would be false</p>
+</tr></td><tr><td><p>Some operators in JavaScript perform implicit type conversions, and are sometimes
+used for type conversion.</p>
+
+<p>The unary <code>!</code> operator converts its operand to a boolean and negates it.</p>
+
+<p>This fact lead to the following idiom that you can see in your source code:</p>
+
+<pre><code>!!x // Same as Boolean(x). Note double exclamation mark
+</code></pre>
+</tr></td><tr><td><p>After seeing all these great answers, I would like to add another reason for using  <code>!!</code>. Currenty I'm working in Angular 2-4 (TypeScript) and I want to return a boolean as <code>false</code> when my user is not authenticated. If he isn't authenticated, the token-string would be <code>null</code> or <code>""</code>. I can do this by using the next block of code:</p>
+
+<pre><code>public isAuthenticated(): boolean {
+   return !!this.getToken();
+}
+</code></pre>
+</tr></td><tr><td><p>I just wanted to add that</p>
+
+<pre><code>if(variableThing){
+  // do something
+}
+</code></pre>
+
+<p>is the same as</p>
+
+<pre><code>if(!!variableThing){
+  // do something
+}
+</code></pre>
+
+<p>But this can be an issue when something is undefined.</p>
+
+<pre><code>// a === undefined, b is an empty object (eg. b.asdf === undefined)
+var a, b = {};
+
+// Both of these give error a.foo is not defined etc.
+// you'd see the same behavior for !!a.foo and !!b.foo.bar
+
+a.foo 
+b.foo.bar
+
+// This works -- these return undefined
+
+a &amp;&amp; a.foo
+b.foo &amp;&amp; b.foo.bar
+b &amp;&amp; b.foo &amp;&amp; b.foo.bar
+</code></pre>
+
+<p>The trick here is the chain of <code>&amp;&amp;</code>s will return <strong>the first falsey value</strong> it finds -- and this can be fed to an if statement etc.  So if b.foo is undefined, it will return undefined and skip the <code>b.foo.bar</code> statement, and we get no error.</p>
+
+<p>The above return undefined but if you have an empty string, false, null, 0, undefined those values will return and soon as we encounter them in the chain -- <code>[]</code> and <code>{}</code> are both "truthy" and we will continue down the so-called "&amp;&amp; chain" to the next value to the right.</p>
+
+<p><strong>P.S.</strong> Another way of doing the same thing is <code>(b || {}).foo</code>, because if b is undefined then <code>b || {}</code> will be <code>{}</code>, and you'll be accessing a value in an empty object (no error) instead of trying to access a value within "undefined" (causes an error).  So, <code>(b || {}).foo</code> is the same as <code>b &amp;&amp; b.foo</code> and <code>((b || {}).foo || {}).bar</code> is the same as <code>b &amp;&amp; b.foo &amp;&amp; b.foo.bar</code>.</p>
+</tr></td><tr><td><p><code>!!</code> is similar to using the <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean" rel="nofollow noreferrer"><em>Boolean constructor</em></a>, or arguably more like the <a href="https://www.w3schools.com/js/js_booleans.asp" rel="nofollow noreferrer"><em>Boolean function.</em></a></p>
+
+<p><div class="snippet" data-lang="js" data-hide="false" data-console="true" data-babel="false">
+<div class="snippet-code">
+<pre class="snippet-code-js lang-js prettyprint-override"><code>console.log(Boolean(null)); // Preffered over the Boolean object
+
+console.log(new Boolean(null).valueOf()); // Not recommended for coverting non-boolean values
+
+console.log(!!null); // A hacky way to omit calling the Boolean function, but essentially does the same thing. 
+
+
+// The context you saw earlier (your example)
+var vertical;
+
+function Example(vertical)
+{
+        this.vertical = vertical !== undefined ? !!vertical : 
+        this.vertical; 
+        // Let's break it down: If vertical is strictly not undefined, return the boolean value of vertical and set it to this.vertical. If not, don't set a value for this.vertical (just ignore it and set it back to what it was before; in this case, nothing).   
+
+        return this.vertical;
+}
+
+console.log( "\n---------------------" )
+
+// vertical is currently undefined
+
+console.log(new Example(vertical).vertical); // The falsey or truthy value of this.vertical
+console.log(!!new Example(vertical).vertical); // Coerced value of this.vertical
+
+vertical = 12.5; // set vertical to 12.5, a truthy value.
+console.log(new Example(vertical).vertical); // The falsey or truthy value of this.vertical which happens to be true anyway
+console.log(!!new Example(vertical).vertical); // Coerced value of this.vertical
+
+vertical = -0; // set vertical to -0, a falsey value.
+console.log(new Example(vertical).vertical); // The falsey or truthy value of this.vertical which happens to be false either way
+console.log(!!new Example(vertical).vertical); // Coerced value of this.vertical</code></pre>
+</div>
+</div>
+</p>
+
+<p><em>Falsey values</em> in javascript <strong>coerce</strong> to <em>false</em>, and <em>truthy values</em> <strong>coerce</strong> to <em>true.</em> Falsey and truthy values can also be used in <code>if</code> statements and will essentially "map" to their corresponding boolean value. However, you will probably not find yourself having to use proper boolean values often, as they mostly differ in output (return values). </p>
 
 <blockquote>
-  <p>In computer architecture, a branch predictor is a
-  digital circuit that tries to guess which way a branch (e.g. an
-  if-then-else structure) will go before this is known for sure. The
-  purpose of the branch predictor is to improve the flow in the
-  instruction pipeline. Branch predictors play a critical role in
-  achieving high effective performance in many modern pipelined
-  microprocessor architectures such as x86.</p>
+  <p>Although this may seem similar to casting, realistically this is likely a <em>mere</em> coincidence and is not 'built' or purposely made for and like a boolean cast. So let's not call it that.</p>
+</blockquote>
+
+<hr />
+
+<h3>Why and how it works</h3>
+
+<p>To be concise, it looks something like this: <code>! ( !null )</code>. Whereas, <code>null</code> is <strong>falsey</strong>, so <code>!null</code> would be <strong>true</strong>. Then <code>!true</code> would be <strong>false</strong> and it would essentially <em>invert back</em> to what it was before, 
+except this time as a <em>proper boolean value</em> (or even <em>vice versa</em> with <em>truthy values</em>  like <code>{}</code> or <code>1</code>).   </p>
+
+<p><br /></p>
+
+<h3>Going back to your example</h3>
+
+<p>Overall, the context that you saw simply adjusts <code>this.vertical</code> depending on whether or not <code>vertical</code> is defined, and if so; it will be set to the resulting boolean value of vertical, otherwise it will not change. In other words, if <code>vertical</code> is defined; <code>this.vertical</code> will be set to the boolean value of it, otherwise, it will stay the same. I guess that in itself is an example of how you would use <code>!!</code>, and what it does.</p>
+
+<p><br /></p>
+
+<h3>Vertical I/O Example</h3>
+
+<p>Run this example and fiddle around with the vertical value in the input. See what the result coerces to so that you can fully understand your context's code. In the input, enter any valid javascript value.
+<strong>Remember to include the quotations if you are testing out a string.</strong> Don't mind the CSS and HTML code too much, simply run this snippet and play around with it. However, you might want to take a look at the non-DOM-related javascript code though (the use of the Example constructor and the vertical variable).</p>
+
+<p><div class="snippet" data-lang="js" data-hide="false" data-console="true" data-babel="false">
+<div class="snippet-code">
+<pre class="snippet-code-js lang-js prettyprint-override"><code>var vertical = document.getElementById("vertical");
+var p = document.getElementById("result");
+
+function Example(vertical)
+{
+        this.vertical = vertical !== undefined ? !!vertical : 
+        this.vertical;   
+
+        return this.vertical;
+}
+
+document.getElementById("run").onclick = function()
+{
+
+  p.innerHTML = !!( new Example(eval(vertical.value)).vertical );
   
-  <p>Two-way branching is usually implemented with a conditional jump
-  instruction. A conditional jump can either be "not taken" and continue
-  execution with the first branch of code which follows immediately
-  after the conditional jump, or it can be "taken" and jump to a
-  different place in program memory where the second branch of code is
-  stored. It is not known for certain whether a conditional jump will be
-  taken or not taken until the condition has been calculated and the
-  conditional jump has passed the execution stage in the instruction
-  pipeline (see fig. 1).</p>
-</blockquote>
-
-<p><a href="https://i.stack.imgur.com/unxnb.png" rel="noreferrer"><img src="https://i.stack.imgur.com/unxnb.png" alt="figure 1"></a></p>
-
-<p>Based on the described scenario, I have written an animation demo to show how instructions are executed in a pipeline in different situations.</p>
-
-<ol>
-<li>Without the Branch Predictor. </li>
-</ol>
-
-<blockquote>
-  <p>Without branch prediction, the processor would have to wait until the
-  conditional jump instruction has passed the execute stage before the
-  next instruction can enter the fetch stage in the pipeline.</p>
-</blockquote>
-
-<p>The example contains three instructions and the first one is a conditional jump instruction. The latter two instructions can go into the pipeline until the conditional jump instruction is executed. </p>
-
-<p><a href="https://i.stack.imgur.com/GMFQ6.gif" rel="noreferrer"><img src="https://i.stack.imgur.com/GMFQ6.gif" alt="without branch predictor"></a></p>
-
-<p>It will take 9 clock cycles for 3 instructions to be completed.</p>
-
-<ol start="2">
-<li>Use Branch Predictor and don't take a conditional jump. Let's assume that the predict is <strong>not</strong> taking the conditional jump.</li>
-</ol>
-
-<p><a href="https://i.stack.imgur.com/Ms5p1.gif" rel="noreferrer"><img src="https://i.stack.imgur.com/Ms5p1.gif" alt="enter image description here"></a></p>
-
-<p>It will take 7 clock cycles for 3 instructions to be completed.</p>
-
-<ol start="3">
-<li>Use Branch Predictor and take a conditional jump. Let's assume that the predict is <strong>not</strong> taking the conditional jump.</li>
-</ol>
-
-<p><a href="https://i.stack.imgur.com/HIpG3.gif" rel="noreferrer"><img src="https://i.stack.imgur.com/HIpG3.gif" alt="enter image description here"></a></p>
-
-<p>It will take 9 clock cycles for 3 instructions to be completed.</p>
-
-<blockquote>
-  <p>The time that is wasted in case of a branch misprediction is equal to
-  the number of stages in the pipeline from the fetch stage to the
-  execute stage. Modern microprocessors tend to have quite long
-  pipelines so that the misprediction delay is between 10 and 20 clock
-  cycles. As a result, making a pipeline longer increases the need for a
-  more advanced branch predictor.</p>
-</blockquote>
-
-<p>As you can see, it seems we don't have a reason not to use Branch Predictor.</p>
-
-<p>It's quite a simple demo that clarifies the very basic part of Branch Predictor. If those gifs are annoying, please feel free to remove them from the answer and visitors can also get the live demo source code from <a href="https://github.com/Eugene-Mark/BranchPredictorDemo" rel="noreferrer">BranchPredictorDemo</a></p>
-</tr></td><tr><td><p>Sorted arrays are processed faster than an unsorted array, due to a phenomena called branch prediction.</p>
-
-<p>The branch predictor is a digital circuit (in computer architecture) trying to predict which way a branch will go, improving the flow in the instruction pipeline. The circuit/computer predicts the next step and executes it.</p>
-
-<p>Making a wrong prediction leads to going back to the previous step, and executing with another prediction. Assuming the prediction is correct, the code will continue to the next step. A wrong prediction results in repeating the same step, until a correct prediction occurs.</p>
-
-<p>The answer to your question is very simple.</p>
-
-<p>In an unsorted array, the computer makes multiple predictions, leading to an increased chance of errors.
-Whereas, in a sorted array, the computer makes fewer predictions, reducing the chance of errors.
-Making more predictions requires more time.</p>
-
-<p>Sorted Array: Straight Road
-    ____________________________________________________________________________________
-    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT</p>
-
-<p>Unsorted Array: Curved Road</p>
-
-<pre><code>______   ________
-|     |__|
-</code></pre>
-
-<p>Branch prediction: Guessing/predicting which road is straight and following it without checking</p>
-
-<pre><code>___________________________________________ Straight road
- |_________________________________________|Longer road
-</code></pre>
-
-<p>Although both the roads reach the same destination, the straight road is shorter, and the other is longer. If then you choose the other by mistake, there is no turning back, and so you will waste some extra time if you choose the longer road. This is similar to what happens in the computer, and I hope this helped you understand better.</p>
-
-<hr>
-
-<p>Also I want to cite <a href="https://stackoverflow.com/users/16940/simon-weaver">@Simon_Weaver</a> from the comments:</p>
-
-<blockquote>
-  <p>It doesn’t make fewer predictions - it makes fewer incorrect predictions. It still has to predict for each time through the loop...</p>
-</blockquote>
-</tr></td><tr><td><p>Besides the fact that the branch prediction may slow you down, a sorted array has another advantage:   </p>
-
-<p>You can have a stop condition instead of just checking the value, this way you only loop over the relevant data, and ignore the rest.<br>
-The branch prediction will miss only once.</p>
-
-<pre><code> // sort backwards (higher values first), may be in some other part of the code
- std::sort(data, data + arraySize, std::greater&lt;int&gt;());
-
- for (unsigned c = 0; c &lt; arraySize; ++c) {
-       if (data[c] &lt; 128) {
-              break;
-       }
-       sum += data[c];               
- }
-</code></pre>
-</tr></td><tr><td><p>On ARM, there is no branch needed, because every instruction has a 4-bit condition field, which tests (at zero cost) any of <a href="https://community.arm.com/developer/ip-products/processors/b/processors-ip-blog/posts/condition-codes-1-condition-flags-and-codes" rel="noreferrer">16 different different conditions</a> that may arise in the Processor Status Register, and if the condition on an instruction is false, the instruction is skipped. This eliminates the need for short branches, and there would be no branch prediction hit for this algorithm. <b>Therefore, the sorted version of this algorithm would run slower than the unsorted version on ARM, because of the extra overhead of sorting.</b></p>
-
-<p>The inner loop for this algorithm would look something like the following in ARM assembly language:</p>
-
-<pre class="lang-js prettyprint-override"><code>MOV R0, #0     // R0 = sum = 0
-MOV R1, #0     // R1 = c = 0
-ADR R2, data   // R2 = addr of data array (put this instruction outside outer loop)
-.inner_loop    // Inner loop branch label
-    LDRB R3, [R2, R1]     // R3 = data[c]
-    CMP R3, #128          // compare R3 to 128
-    ADDGE R0, R0, R3      // if R3 &gt;= 128, then sum += data[c] -- no branch needed!
-    ADD R1, R1, #1        // c++
-    CMP R1, #arraySize    // compare c to arraySize
-    BLT inner_loop        // Branch to inner_loop if c &lt; arraySize
-</code></pre>
-
-<p><strong><em>But this is actually part of a bigger picture:</em></strong></p>
-
-<p><code>CMP</code> opcodes always update the status bits in the Processor Status Register (PSR), because that is their purpose, but most other instructions do not touch the PSR unless you add an optional <code>S</code> suffix to the instruction, specifying that the PSR should be updated based on the result of the instruction. <strong>Just like the 4-bit condition suffix, being able to execute instructions without affecting the PSR is a mechanism that reduces the need for branches on ARM, and also facilitates out of order dispatch at the hardware level</strong>, because after performing some operation X that updates the status bits, subsequently (or in parallel) you can do a bunch of other work that explicitly should not affect the status bits, then you can test the state of the status bits set earlier by X.</p>
-
-<p>The condition testing field and the optional "set status bit" field can be combined, for example:</p>
-
-<ul>
-<li><code>ADD R1, R2, R3</code> performs <code>R1 = R2 + R3</code> without updating any status bits.</li>
-<li><code>ADDGE R1, R2, R3</code> performs the same operation only if a previous instruction that affected the status bits resulted in a Greater than or Equal condition.</li>
-<li><code>ADDS R1, R2, R3</code> performs the addition and then updates the <code>N</code>, <code>Z</code>, <code>C</code> and <code>V</code> flags in the Processor Status Register based on whether the result was Negative, Zero, Carried (for unsigned addition), or oVerflowed (for signed addition).</li>
-<li><code>ADDSGE R1, R2, R3</code> performs the addition only if the <code>GE</code> test is true, and then subsequently updates the status bits based on the result of the addition.</li>
-</ul>
-
-<p>Most processor architectures do not have this ability to specify whether or not the status bits should be updated for a given operation, which can necessitate writing additional code to save and later restore status bits, or may require additional branches, or may limit the processor's out of order execution efficiency: one of the side effects of most CPU instruction set architectures forcibly updating status bits after most instructions is that it is much harder to tease apart which instructions can be run in parallel without interfering with each other. Updating status bits has side effects, therefore has a linearizing effect on code. <strong>ARM's ability to mix and match branch-free condition testing on any instruction with the option to either update or not update the status bits after any instruction is extremely powerful, for both assembly language programmers and compilers, and produces very efficient code.</strong></p>
-
-<p>If you have ever wondered why ARM has been so phenomenally successful, the brilliant effectiveness and interplay of these two mechanisms are a big part of the story, because they are one of the greatest sources of the ARM architecture's efficiency. The brilliance of the original designers of the ARM ISA back in 1983, Steve Furber and Roger (now Sophie) Wilson, cannot be overstated.</p>
-</tr></td><tr><td><p>The assumption by other answers that one needs to sort the data is not correct.</p>
-
-<p>The following code does not sort the entire array, but only 200-element segments of it, and thereby runs the fastest.</p>
-
-<p>Sorting only k-element sections completes the pre-processing in linear time, <code>O(n)</code>, rather than the <code>O(n.log(n))</code> time needed to sort the entire array.</p>
-
-<pre><code>#include &lt;algorithm&gt;
-#include &lt;ctime&gt;
-#include &lt;iostream&gt;
-
-int main() {
-    int data[32768]; const int l = sizeof data / sizeof data[0];
-
-    for (unsigned c = 0; c &lt; l; ++c)
-        data[c] = std::rand() % 256;
-
-    // sort 200-element segments, not the whole array
-    for (unsigned c = 0; c + 200 &lt;= l; c += 200)
-        std::sort(&amp;data[c], &amp;data[c + 200]);
-
-    clock_t start = clock();
-    long long sum = 0;
-
-    for (unsigned i = 0; i &lt; 100000; ++i) {
-        for (unsigned c = 0; c &lt; sizeof data / sizeof(int); ++c) {
-            if (data[c] &gt;= 128)
-                sum += data[c];
-        }
-    }
-
-    std::cout &lt;&lt; static_cast&lt;double&gt;(clock() - start) / CLOCKS_PER_SEC &lt;&lt; std::endl;
-    std::cout &lt;&lt; "sum = " &lt;&lt; sum &lt;&lt; std::endl;
-}
-</code></pre>
-
-<p>This also "proves" that it has nothing to do with any algorithmic issue such as sort order, and it is indeed branch prediction.</p>
-</tr></td><tr><td><p>This question is rooted in Branch Prediction Models on CPUs. I'd recommend reading this paper: </p>
-
-<p><a href="https://pdfs.semanticscholar.org/5634/4be375cfed0f79cb9d009ac838682e1bace3.pdf" rel="noreferrer"><strong>Increasing the Instruction Fetch Rate via Multiple Branch Prediction and a Branch Address Cache</strong></a></p>
-
-<p>When you have sorted elements, IR could not be bothered to fetch all CPU instructions, again and again, It fetches them from cache.</p>
-</tr></td><tr><td><p>One way to avoid branch prediction errors is to build a lookup table, and index it using the data. Stefan de Bruijn discussed that in his answer.</p>
-<p>But in this case, we know values are in the range [0, 255] and we only care about values &gt;= 128. That means we can easily extract a single bit that will tell us whether we want a value or not: by shifting the data to the right 7 bits, we are left with a 0 bit or a 1 bit, and we only want to add the value when we have a 1 bit. Let's call this bit the &quot;decision bit&quot;.</p>
-<p>By using the 0/1 value of the decision bit as an index into an array, we can make code that will be equally fast whether the data is sorted or not sorted. Our code will always add a value, but when the decision bit is 0, we will add the value somewhere we don't care about. Here's the code:</p>
-<p>// Test</p>
-<pre><code>clock_t start = clock();
-long long a[] = {0, 0};
-long long sum;
-
-for (unsigned i = 0; i &lt; 100000; ++i)
+}</code></pre>
+<pre class="snippet-code-css lang-css prettyprint-override"><code>input
 {
-    // Primary loop
-    for (unsigned c = 0; c &lt; arraySize; ++c)
-    {
-        int j = (data[c] &gt;&gt; 7);
-        a[j] += data[c];
-    }
-}
+  text-align: center;
+  width: 5em;
+} 
 
-double elapsedTime = static_cast&lt;double&gt;(clock() - start) / CLOCKS_PER_SEC;
-sum = a[1];
-</code></pre>
-<p>This code wastes half of the adds but never has a branch prediction failure. It's tremendously faster on random data than the version with an actual if statement.</p>
-<p>But in my testing, an explicit lookup table was slightly faster than this, probably because indexing into a lookup table was slightly faster than bit shifting. This shows how my code sets up and uses the lookup table (unimaginatively called lut for &quot;LookUp Table&quot; in the code). Here's the C++ code:</p>
-<p>// Declare and then fill in the lookup table</p>
-<pre><code>int lut[256];
-for (unsigned c = 0; c &lt; 256; ++c)
-    lut[c] = (c &gt;= 128) ? c : 0;
-
-// Use the lookup table after it is built
-for (unsigned i = 0; i &lt; 100000; ++i)
+button 
 {
-    // Primary loop
-    for (unsigned c = 0; c &lt; arraySize; ++c)
-    {
-        sum += lut[data[c]];
-    }
+  margin: 15.5px;
+  width: 14em;
+  height: 3.4em;
+  color: blue;
+}
+
+var 
+{
+  color: purple;
+}
+
+p {
+  margin: 15px;
+}
+
+span.comment {
+  color: brown;
+}</code></pre>
+<pre class="snippet-code-html lang-html prettyprint-override"><code>&lt;!--Vertical I/O Example--&gt;
+&lt;h4&gt;Vertical Example&lt;/h4&gt;
+&lt;code id="code"&gt;&lt;var class="var"&gt;var&lt;/var&gt; vertical = &lt;input type="text" id="vertical" maxlength="9" /&gt;; &lt;span class="comment"&gt;// enter any valid javascript value&lt;/span&gt;&lt;/code&gt;
+&lt;br /&gt;
+&lt;button id="run"&gt;Run&lt;/button&gt;
+&lt;p id="result"&gt;...&lt;/p&gt;</code></pre>
+</div>
+</div>
+</p>
+</tr></td><tr><td><p>Returns boolean value of a variable.</p>
+
+<p>Instead, <code>Boolean</code> class can be used.</p>
+
+<p>(please read code descriptions)</p>
+
+<pre><code>var X = "test"; // X value is "test" as a String value
+var booleanX = !!X // booleanX is `true` as a Boolean value beacuse non-empty strings evaluates as `true` in boolean
+var whatIsXValueInBoolean = Boolean(X) // whatIsXValueInBoolean is `true` again
+console.log(Boolean(X) === !!X) // writes `true`
+</code></pre>
+
+<p>Namely, <code>Boolean(X) = !!X</code> in use.</p>
+
+<p>Please check code snippet out below <strong>?</strong></p>
+
+<p><div class="snippet" data-lang="js" data-hide="false" data-console="true" data-babel="false">
+<div class="snippet-code">
+<pre class="snippet-code-js lang-js prettyprint-override"><code>let a = 0
+console.log("a: ", a) // writes a value in its kind
+console.log("!a: ", !a) // writes '0 is NOT true in boolean' value as boolean - So that's true.In boolean 0 means false and 1 means true.
+console.log("!!a: ", !!a) // writes 0 value in boolean. 0 means false.
+console.log("Boolean(a): ", Boolean(a)) // equals to `!!a`
+console.log("\n") // newline
+
+a = 1
+console.log("a: ", a)
+console.log("!a: ", !a)
+console.log("!!a: ", !!a) // writes 1 value in boolean
+console.log("\n") // newline
+
+a = ""
+console.log("a: ", a)
+console.log("!a: ", !a) // writes '"" is NOT true in boolean' value as boolean - So that's true.In boolean empty strings, null and undefined values mean false and if there is a string it means true.
+console.log("!!a: ", !!a) // writes "" value in boolean
+console.log("\n") // newline
+
+a = "test"
+console.log("a: ", a) // writes a value in its kind
+console.log("!a: ", !a)
+console.log("!!a: ", !!a) // writes "test" value in boolean
+
+console.log("Boolean(a) === !!a: ", Boolean(a) === !!a) // writes true</code></pre>
+</div>
+</div>
+</p>
+</tr></td><tr><td><p><code>!!</code> it's using <code>NOT</code> operation twice together, <code>!</code> convert the value to a <code>boolean</code> and reverse it, here is a simple example to see how <code>!!</code> works:</p>
+
+<p>At first, the place you have:</p>
+
+<pre><code>var zero = 0;
+</code></pre>
+
+<p>Then you do <code>!0</code>, it will be converted to boolean and be evaluated to <code>true</code>, because 0 is <code>falsy</code>, so you get the reversed value and converted to boolean, so it gets evaluated to <code>true</code>.</p>
+
+<pre><code>!zero; //true
+</code></pre>
+
+<p>but we don't want the reversed <strong>boolean version</strong> of the value, so we can reverse it again to get our result! That's why we use another <code>!</code>.</p>
+
+<p>Basically, <code>!!</code> make us sure, the value we get is boolean, not falsy, truthy or string etc...</p>
+
+<p>So  it's like using <code>Boolean</code> function in javascript, but easy and shorter way to convert a value to boolean:</p>
+
+<pre><code>var zero = 0;
+!!zero; //false
+</code></pre>
+</tr></td><tr><td><p>This question has been answered quite thoroughly, but I'd like to add an answer that I hope is as simplified as possible, making the meaning of !! as simple to grasp as can be.</p>
+
+<p>Because javascript has what are called "truthy" and "falsey" values, there are expressions that when evaluated in other expressions will result in a true or false condition, even though the value or expression being examined is not actually <code>true</code> or <code>false</code>.</p>
+
+<p>For instance: </p>
+
+<pre><code>if (document.getElementById('myElement')) {
+    // code block
 }
 </code></pre>
-<p>In this case, the lookup table was only 256 bytes, so it fits nicely in a cache and all was fast. This technique wouldn't work well if the data was 24-bit values and we only wanted half of them... the lookup table would be far too big to be practical. On the other hand, we can combine the two techniques shown above: first shift the bits over, then index a lookup table. For a 24-bit value that we only want the top half value, we could potentially shift the data right by 12 bits, and be left with a 12-bit value for a table index. A 12-bit table index implies a table of 4096 values, which might be practical.</p>
-<p>The technique of indexing into an array, instead of using an if statement, can be used for deciding which pointer to use. I saw a library that implemented binary trees, and instead of having two named pointers (pLeft and pRight or whatever) had a length-2 array of pointers and used the &quot;decision bit&quot; technique to decide which one to follow. For example, instead of:</p>
-<pre><code>if (x &lt; node-&gt;value)
-    node = node-&gt;pLeft;
-else
-    node = node-&gt;pRight;
-this library would do something like:
 
-i = (x &lt; node-&gt;value);
-node = node-&gt;link[i];
+<p>If that element does in fact exist, the expression will evaluate as true, and the code block will be executed.</p>
+
+<p>However:</p>
+
+<pre><code>if (document.getElementById('myElement') == true) {
+    // code block
+}
 </code></pre>
-<p>It's a nice solution and maybe it will work.</p>
+
+<p>...will NOT result in a true condition, and the code block will not be executed, even if the element does exist.  </p>
+
+<p>Why?  Because <code>document.getElementById()</code> is a "truthy" expression that will evaluate as true in this <code>if()</code> statement, but it is not an actual boolean value of <code>true</code>.</p>
+
+<p>The double "not" in this case is quite simple.  It is simply two <code>not</code>s back to back. </p>
+
+<p>The first one simply "inverts" the truthy or falsey value, resulting in an actual boolean type, and then the second one "inverts" it back again to it's original state, but now in an actual boolean value.  That way you have consistency:</p>
+
+<pre><code>if (!!document.getElementById('myElement')) {}
+</code></pre>
+
+<p>and </p>
+
+<pre><code>if (!!document.getElementById('myElement') == true) {}
+</code></pre>
+
+<p>will BOTH return true, as expected.</p>
+</tr></td><tr><td><p>It forces all things to boolean. </p>
+
+<p>For example:</p>
+
+<pre><code>console.log(undefined); // -&gt; undefined
+console.log(!undefined); // -&gt; true
+console.log(!!undefined); // -&gt; false
+
+console.log('abc'); // -&gt; abc
+console.log(!'abc'); // -&gt; false
+console.log(!!'abc'); // -&gt; true
+
+console.log(0 === false); // -&gt; undefined
+console.log(!0 === false); // -&gt; false
+console.log(!!0 === false); // -&gt; true
+</code></pre>
+</tr></td><tr><td><p>Sometimes it is necessary to check whether we have a value in the function or not, and the amount itself is not important to us, but whether or not it matters.
+for example we want to check ,if user has major or not and we have a function just like:</p>
+
+<pre><code>hasMajor(){return this.major}//it return "(users major is)Science" 
+</code></pre>
+
+<p>but the answer is not important to us we just want to check it has a major or not and we need a boolean value(true or false) how we get it:</p>
+
+<p>just like this:</p>
+
+<pre><code>hasMajor(){ return !(!this.major)}
+</code></pre>
+
+<p>or as the same </p>
+
+<pre><code>hasMajor(){return !!this.major)}
+</code></pre>
+
+<p>if this.major has a value then <code>!this.major</code> return false but because the value has exits and we need to return true we use ! twice to return the correct answer <code>!(!this.major)</code></p>
+</tr></td><tr><td><p>To cast your JavaScript variables to boolean,</p>
+
+<pre><code>var firstname = "test";
+//type of firstname is string
+var firstNameNotEmpty = !!firstname;
+//type of firstNameNotEmpty is boolean
+</code></pre>
+
+<p>javascript <strong>false</strong> for "",0,undefined and null</p>
+
+<p>javascript is <strong>true</strong> for number other then zero,not empty strings,{},[] and new Date()
+so,</p>
+
+<pre><code>!!("test") /*is true*/
+!!("") /*is false*/
+</code></pre>
+</tr></td><tr><td><p><div class="snippet" data-lang="js" data-hide="false" data-console="true" data-babel="false">
+<div class="snippet-code">
+<pre class="snippet-code-js lang-js prettyprint-override"><code>const foo = 'bar';
+console.log(!!foo); // Boolean: true</code></pre>
+</div>
+</div>
+</p>
+<p>! negates (inverts) a value AND always returns/ produces a boolean. So !'bar' would yield false (because 'bar' is truthy =&gt; negated + boolean = false). With the additional ! operator, the value is negated again, so false becomes true.</p>
 </tr></td>

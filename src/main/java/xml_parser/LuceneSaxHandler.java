@@ -18,6 +18,8 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import lucene_assignment.SpecialCharConverter;
+
 public class LuceneSaxHandler extends DefaultHandler {
 	static DateFormat timestampFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
@@ -84,7 +86,8 @@ public class LuceneSaxHandler extends DefaultHandler {
 			doc.add(new TextField("id", id, Field.Store.YES));
 			doc.add(new SortedDocValuesField("id", new BytesRef(id)));
 			if (title != null)
-				doc.add(new TextField("title", title, Field.Store.YES));
+				doc.add(new TextField("title", SpecialCharConverter.encode(title), Field.Store.NO));
+				doc.add(new TextField("plainTitle", title, Field.Store.YES));
 			doc.add(new TextField("body", body, Field.Store.YES));
 //		doc.add(new IntPoint("score", score));
 			doc.add(new NumericDocValuesField("score", score));

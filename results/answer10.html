@@ -6,1313 +6,681 @@ td, th {
   padding: 8px;
 }
 </style>
-</head><h1>How to get the source directory of a Bash script from within the script itself?</h1><p>How do I get the path of the directory in which a <a href="http://en.wikipedia.org/wiki/Bash_%28Unix_shell%29" rel="noreferrer">Bash</a> script is located, <em>inside</em> that script?</p>
+</head><h1>Does Python have a ternary conditional operator?</h1><p>If Python does not have a ternary conditional operator, is it possible to simulate one using other language constructs?</p>
+<table> <tr><th>answers</th></tr><tr><td><p>Unfortunately, the</p>
 
-<p>I want to use a Bash script as a launcher for another application. I want to change the working directory to the one where the Bash script is located, so I can operate on the files in that directory, like so: </p>
-
-<pre><code>$ ./application
-</code></pre>
-<table> <tr><th>answers</th></tr><tr><td><p>Use <code>dirname "$0"</code>:</p>
-
-<pre><code>#!/bin/bash
-echo "The script you are running has basename `basename "$0"`, dirname `dirname "$0"`"
-echo "The present working directory is `pwd`"
+<pre><code>(falseValue, trueValue)[test]
 </code></pre>
 
-<p>using <code>pwd</code> alone will not work if you are not running the script from the directory it is contained in.</p>
+<p>solution doesn't have short-circuit behaviour; thus both <code>falseValue</code> and <code>trueValue</code> are evaluated regardless of the condition. This could be suboptimal or even buggy (i.e. both <code>trueValue</code> and <code>falseValue</code> could be methods and have side-effects).</p>
 
-<pre><code>[matt@server1 ~]$ pwd
-/home/matt
-[matt@server1 ~]$ ./test2.sh
-The script you are running has basename test2.sh, dirname .
-The present working directory is /home/matt
-[matt@server1 ~]$ cd /tmp
-[matt@server1 tmp]$ ~/test2.sh
-The script you are running has basename test2.sh, dirname /home/matt
-The present working directory is /tmp
-</code></pre>
-</tr></td><tr><td><p>You can use <code>$BASH_SOURCE</code>:</p>
+<p>One solution to this would be</p>
 
-<pre><code>#!/bin/bash
-
-scriptdir=`dirname "$BASH_SOURCE"`
+<pre><code>(lambda: falseValue, lambda: trueValue)[test]()
 </code></pre>
 
-<p>Note that you need to use <code>#!/bin/bash</code> and not <code>#!/bin/sh</code> since it's a Bash extension.</p>
-</tr></td><tr><td><p>I don't think this is as easy as others have made it out to be.  <code>pwd</code> doesn't work, as the current directory is not necessarily the directory with the script.  <code>$0</code> doesn't always have the information either.  Consider the following three ways to invoke a script:</p>
+<p>(execution delayed until the winner is known ;)), but it introduces inconsistency between callable and non-callable objects. In addition, it doesn't solve the case when using properties.</p>
 
-<pre><code>./script
+<p>And so the story goes - choosing between 3 mentioned solutions is a trade-off between having the short-circuit feature, using at least ?ython 2.5 (IMHO not a problem anymore) and not being prone to "<code>trueValue</code>-evaluates-to-false" errors.</p>
+</tr></td><tr><td><p><code> <i>&lt;expression 1&gt;</i> <b>if</b> <i>&lt;condition&gt;</i> <b>else</b> <i>&lt;expression 2&gt;</i> </code></p>
 
-/usr/bin/script
+<pre class="lang-py prettyprint-override"><code>a = 1
+b = 2
 
-script
+1 if a &gt; b else -1 
+# Output is -1
+
+1 if a &gt; b else -1 if a &lt; b else 0
+# Output is -1
 </code></pre>
-
-<p>In the first and third ways <code>$0</code> doesn't have the full path information.  In the second and third, <code>pwd</code> does not work.  The only way to get the directory in the third way would be to run through the path and find the file with the correct match.  Basically the code would have to redo what the OS does.</p>
-
-<p>One way to do what you are asking would be to just hardcode the data in the <code>/usr/share</code> directory, and reference it by its full path.  Data shoudn't be in the <code>/usr/bin</code> directory anyway, so this is probably the thing to do.</p>
-</tr></td><tr><td><pre><code>#!/bin/sh
-PRG="$0"
-
-# need this for relative symlinks
-while [ -h "$PRG" ] ; do
-   PRG=`readlink "$PRG"`
-done
-
-scriptdir=`dirname "$PRG"`
+</tr></td><tr><td><p>Yes, it was <a href="https://mail.python.org/pipermail/python-dev/2005-September/056846.html" rel="noreferrer" title="[Python-Dev] Conditional Expression Resolution">added</a> in version 2.5. The expression syntax is:</p>
+<pre class="lang-py prettyprint-override"><code>a if condition else b
 </code></pre>
-</tr></td><tr><td><p><code>pwd</code> can be used to find the current working directory, and <code>dirname</code> to find the directory of a particular file (command that was run, is <code>$0</code>, so <code>dirname $0</code> should give you the directory of the current script).</p>
-
-<p>However, <code>dirname</code> gives precisely the directory portion of the filename, which more likely than not is going to be relative to the current working directory. If your script needs to change directory for some reason, then the output from <code>dirname</code> becomes meaningless.</p>
-
-<p>I suggest the following:</p>
-
-<pre><code>#!/bin/bash
-
-reldir=`dirname $0`
-cd $reldir
-directory=`pwd`
-
-echo "Directory is $directory"
+<p>First <code>condition</code> is evaluated, then exactly one of either <code>a</code> or <code>b</code> is evaluated and returned based on the <a href="https://en.wikipedia.org/wiki/Boolean_data_type" rel="noreferrer" title="Boolean data type">Boolean</a> value of <code>condition</code>. If <code>condition</code> evaluates to <code>True</code>, then <code>a</code> is evaluated and returned but <code>b</code> is ignored, or else when <code>b</code> is evaluated and returned but <code>a</code> is ignored.</p>
+<p>This allows short-circuiting because when <code>condition</code> is true only <code>a</code> is evaluated and <code>b</code> is not evaluated at all, but when <code>condition</code> is false only <code>b</code> is evaluated and <code>a</code> is not evaluated at all.</p>
+<p>For example:</p>
+<pre class="lang-py prettyprint-override"><code>&gt;&gt;&gt; 'true' if True else 'false'
+'true'
+&gt;&gt;&gt; 'true' if False else 'false'
+'false'
 </code></pre>
-
-<p>This way, you get an absolute, rather then relative directory.</p>
-
-<p>Since the script will be run in a separate bash instance, there is no need to restore the working directory afterwards, but if you do want to change back in your script for some reason, you can easily assign the value of <code>pwd</code> to a variable before you change directory, for future use.</p>
-
-<p>Although just</p>
-
-<pre><code>cd `dirname $0`
+<p>Note that conditionals are an <em>expression</em>, not a <em>statement</em>. This means you can't use assignment statements or <code>pass</code> or other <strong>statements</strong> within a conditional <strong>expression</strong>:</p>
+<pre class="lang-py prettyprint-override"><code>&gt;&gt;&gt; pass if False else x = 3
+  File &quot;&lt;stdin&gt;&quot;, line 1
+    pass if False else x = 3
+          ^
+SyntaxError: invalid syntax
 </code></pre>
-
-<p>solves the specific scenario in the question, I find having the absolute path to more more useful generally.</p>
-</tr></td><tr><td><p>This is Linux specific, but you could use:</p>
-
-<pre><code>SELF=$(readlink /proc/$$/fd/255)
+<p>You can, however, use conditional expressions to assign a variable like so:</p>
+<pre class="lang-py prettyprint-override"><code>x = a if True else b
 </code></pre>
-</tr></td><tr><td><p>This gets the current working directory on Mac OS X 10.6.6:</p>
-
-<pre><code>DIR=$(cd "$(dirname "$0")"; pwd)
-</code></pre>
-</tr></td><tr><td><p>Try using:</p>
-
-<pre><code>real=$(realpath $(dirname $0))
-</code></pre>
-</tr></td><tr><td><p><a href="http://www.gnu.org/s/bash/manual/bash.html#Environment" rel="nofollow noreferrer"><code>$_</code></a> is worth mentioning as an alternative to <code>$0</code>.  If you're running a script from Bash, the accepted answer can be shortened to:</p>
-
-<pre><code>DIR="$( dirname "$_" )"
-</code></pre>
-
-<p>Note that this has to be the first statement in your script.</p>
-</tr></td><tr><td><p>I would use something like this:</p>
-
-<pre><code># retrieve the full pathname of the called script
-scriptPath=$(which $0)
-
-# check whether the path is a link or not
-if [ -L $scriptPath ]; then
-
-    # it is a link then retrieve the target path and get the directory name
-    sourceDir=$(dirname $(readlink -f $scriptPath))
-
-else
-
-    # otherwise just get the directory name of the script path
-    sourceDir=$(dirname $scriptPath)
-
-fi
-</code></pre>
-</tr></td><tr><td><p>I've compared many of the answers given, and come up with some more compact solutions. These seem to handle all of the crazy edge cases that arise from your favorite combination of:</p>
-
+<p>Think of the conditional expression as switching between two values. It is very useful when you're in a 'one value or another' situation, it but doesn't do much else.</p>
+<p>If you need to use statements, you have to use a normal <code>if</code> <strong>statement</strong> instead of a conditional <strong>expression</strong>.</p>
+<hr />
+<p>Keep in mind that it's frowned upon by some Pythonistas for several reasons:</p>
 <ul>
-<li>Absolute paths or relative paths</li>
-<li>File and directory soft links</li>
-<li>Invocation as <code>script</code>, <code>bash script</code>, <code>bash -c script</code>, <code>source script</code>, or <code>. script</code></li>
-<li>Spaces, tabs, newlines, unicode, etc. in directories and/or filename</li>
-<li>Filenames beginning with a hyphen</li>
+<li>The order of the arguments is different from those of the classic <code>condition ? a : b</code> ternary operator from many other languages (such as C, C++, Go, Perl, Ruby, Java, Javascript, etc.), which may lead to bugs when people unfamiliar with Python's &quot;surprising&quot; behaviour use it (they may reverse the argument order).</li>
+<li>Some find it &quot;unwieldy&quot;, since it goes contrary to the normal flow of thought (thinking of the condition first and then the effects).</li>
+<li>Stylistic reasons. (Although the 'inline <code>if</code>' can be <em>really</em> useful, and make your script more concise, it really does complicate your code)</li>
 </ul>
-
-<p>If you're running from Linux, it seems that using the <code>proc</code> handle is the best solution to locate the fully resolved source of the currently running script (in an interactive session, the link points to the respective <code>/dev/pts/X</code>):</p>
-
-<pre><code>resolved="$(readlink /proc/$$/fd/255 &amp;&amp; echo X)" &amp;&amp; resolved="${resolved%$'\nX'}"
-</code></pre>
-
-<p>This has a small bit of ugliness to it, but the fix is compact and easy to understand. We aren't using bash primitives only, but I'm okay with that because <code>readlink</code> simplifies the task considerably. The <code>echo X</code> adds an <code>X</code> to the end of the variable string so that any trailing whitespace in the filename doesn't get eaten, and the parameter substitution <code>${VAR%X}</code> at the end of the line gets rid of the <code>X</code>. Because <code>readlink</code> adds a newline of its own (which would normally be eaten in the command substitution if not for our previous trickery), we have to get rid of that, too. This is most easily accomplished using the <code>$''</code> quoting scheme, which lets us use escape sequences such as <code>\n</code> to represent newlines (this is also how you can easily make deviously named directories and files).</p>
-
-<p>The above should cover your needs for locating the currently running script on Linux, but if you don't have the <code>proc</code> filesystem at your disposal, or if you're trying to locate the fully resolved path of some other file, then maybe you'll find the below code helpful. It's only a slight modification from the above one-liner. If you're playing around with strange directory/filenames, checking the output with both <code>ls</code> and <code>readlink</code> is informative, as <code>ls</code> will output "simplified" paths, substituting <code>?</code> for things like newlines.</p>
-
-<pre><code>absolute_path=$(readlink -e -- "${BASH_SOURCE[0]}" &amp;&amp; echo x) &amp;&amp; absolute_path=${absolute_path%?x}
-dir=$(dirname -- "$absolute_path" &amp;&amp; echo x) &amp;&amp; dir=${dir%?x}
-file=$(basename -- "$absolute_path" &amp;&amp; echo x) &amp;&amp; file=${file%?x}
-
-ls -l -- "$dir/$file"
-printf '$absolute_path: "%s"\n' "$absolute_path"
-</code></pre>
-</tr></td><tr><td><p>Here is a POSIX compliant one-liner:</p>
-
-<pre><code>SCRIPT_PATH=`dirname "$0"`; SCRIPT_PATH=`eval "cd \"$SCRIPT_PATH\" &amp;&amp; pwd"`
-
-# test
-echo $SCRIPT_PATH
-</code></pre>
-</tr></td><tr><td><p>I usually include the following at the top of my scripts which works in the majority of cases:</p>
-
-<pre><code>[ "$(dirname $0)" = '.' ] &amp;&amp; SOURCE_DIR=$(pwd) || SOURCE_DIR=$(dirname $0);
-ls -l $0 | grep -q ^l &amp;&amp; SOURCE_DIR=$(ls -l $0 | awk '{print $NF}');
-</code></pre>
-
-<p>The first line assigns source based on the value of <code>pwd</code> if run from current path or dirname if called from elsewhere.</p>
-
-<p>The second line examines the path to see if it is a symlink and if so, updates SOURCE_DIR to the location of the link itself.</p>
-
-<p>There are probably better solutions out there but this is the cleanest I've managed to come up with myself.</p>
-</tr></td><tr><td><pre><code>pushd . &gt; /dev/null
-SCRIPT_PATH="${BASH_SOURCE[0]}"
-if ([ -h "${SCRIPT_PATH}" ]); then
-  while([ -h "${SCRIPT_PATH}" ]); do cd `dirname "$SCRIPT_PATH"`; 
-  SCRIPT_PATH=`readlink "${SCRIPT_PATH}"`; done
-fi
-cd `dirname ${SCRIPT_PATH}` &gt; /dev/null
-SCRIPT_PATH=`pwd`;
-popd  &gt; /dev/null
-</code></pre>
-
-<p>Works for all versions,including                                                                                                              </p>
-
+<p>If you're having trouble remembering the order, then remember that when read aloud, you (almost) say what you mean. For example, <code>x = 4 if b &gt; 8 else 9</code> is read aloud as <code>x will be 4 if b is greater than 8 otherwise 9</code>.</p>
+<p>Official documentation:</p>
 <ul>
-<li>when called via multple depth soft link,                                                                                                      </li>
-<li>when the file it</li>
-<li>when script called by command "<code>source</code>" aka <code>.</code> (dot) operator.                                                                                  </li>
-<li>when arg <code>$0</code> is modified from caller.                                                                                                          </li>
-<li><code>"./script"</code> </li>
-<li><code>"/full/path/to/script"</code> </li>
-<li><code>"/some/path/../../another/path/script"</code></li>
-<li><code>"./some/folder/script"</code>                                                                                                                 </li>
+<li><a href="https://docs.python.org/3/reference/expressions.html#conditional-expressions" rel="noreferrer" title="Conditional expressions">Conditional expressions</a></li>
+<li><a href="https://docs.python.org/3/faq/programming.html#is-there-an-equivalent-of-c-s-ternary-operator" rel="noreferrer" title="Is there an equivalent of C’s ”?:” ternary operator?">Is there an equivalent of C’s ”?:” ternary operator?</a></li>
 </ul>
-
-<p>Alternatively, if the bash script itself is a <strong>relative symlink</strong> you <em>want</em> to follow it and return the full path of the linked-to script:</p>
-
-<pre><code>pushd . &gt; /dev/null
-SCRIPT_PATH="${BASH_SOURCE[0]}";
-if ([ -h "${SCRIPT_PATH}" ]) then
-  while([ -h "${SCRIPT_PATH}" ]) do cd `dirname "$SCRIPT_PATH"`; SCRIPT_PATH=`readlink "${SCRIPT_PATH}"`; done
-fi
-cd `dirname ${SCRIPT_PATH}` &gt; /dev/null
-SCRIPT_PATH=`pwd`;
-popd  &gt; /dev/null
-</code></pre>
-
-<p><code>SCRIPT_PATH</code> is given in full path, no matter how it is called.<br>
-Just make sure you locate this at start of the script.</p>
-
-<p>This comment and code Copyleft, selectable license under the GPL2.0 or later or CC-SA 3.0  (CreativeCommons Share Alike) or later. (c) 2008. All rights reserved. No warranty of any kind. You have been warned.<br>
-<a href="http://www.gnu.org/licenses/gpl-2.0.txt" rel="noreferrer">http://www.gnu.org/licenses/gpl-2.0.txt</a><br>
-<a href="http://creativecommons.org/licenses/by-sa/3.0/" rel="noreferrer">http://creativecommons.org/licenses/by-sa/3.0/</a><br>
-18eedfe1c99df68dc94d4a94712a71aaa8e1e9e36cacf421b9463dd2bbaa02906d0d6656</p>
-</tr></td><tr><td><p>This works in bash-3.2:</p>
-
-<pre><code>path="$( dirname "$( which "$0" )" )"
-</code></pre>
-
-<p>If you have a <code>~/bin</code> directory in your <code>$PATH</code>, you have  <code>A</code> inside this directory. It sources the script <code>~/bin/lib/B</code>. You know where the included script is relative to the original one, in the <code>lib</code> subdirectory, but not where it is relative to the user's current directory.</p>
-
-<p>This is solved by the following (inside <code>A</code>):</p>
-
-<pre><code>source "$( dirname "$( which "$0" )" )/lib/B"
-</code></pre>
-
-<p>It doesn't matter where the user is or how he calls the script, this will always work.</p>
-</tr></td><tr><td><pre><code>#!/bin/bash
-
-DIR=&quot;$( cd &quot;$( dirname &quot;${BASH_SOURCE[0]}&quot; )&quot; &gt;/dev/null 2&gt;&amp;1 &amp;&amp; pwd )&quot;
-</code></pre>
-<p>is a useful one-liner which will give you the full directory name of the script no matter where it is being called from.</p>
-<p>It will work as long as the last component of the path used to find the script is not a symlink (directory links are OK).  If you also want to resolve any links to the script itself, you need a multi-line solution:</p>
-<pre><code>#!/bin/bash
-
-SOURCE=&quot;${BASH_SOURCE[0]}&quot;
-while [ -h &quot;$SOURCE&quot; ]; do # resolve $SOURCE until the file is no longer a symlink
-  DIR=&quot;$( cd -P &quot;$( dirname &quot;$SOURCE&quot; )&quot; &gt;/dev/null 2&gt;&amp;1 &amp;&amp; pwd )&quot;
-  SOURCE=&quot;$(readlink &quot;$SOURCE&quot;)&quot;
-  [[ $SOURCE != /* ]] &amp;&amp; SOURCE=&quot;$DIR/$SOURCE&quot; # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
-done
-DIR=&quot;$( cd -P &quot;$( dirname &quot;$SOURCE&quot; )&quot; &gt;/dev/null 2&gt;&amp;1 &amp;&amp; pwd )&quot;
-</code></pre>
-<p>This last one will work with any combination of aliases, <code>source</code>, <code>bash -c</code>, symlinks, etc.</p>
-<p><strong>Beware:</strong> if you <code>cd</code> to a different directory before running this snippet, the result may be incorrect!</p>
-<p>Also, watch out for <a href="http://bosker.wordpress.com/2012/02/12/bash-scripters-beware-of-the-cdpath/" rel="noreferrer"><code>$CDPATH</code> gotchas</a>, and stderr output side effects if the user has smartly overridden cd to redirect output to stderr instead (including escape sequences, such as when calling <code>update_terminal_cwd &gt;&amp;2</code> on Mac). Adding <code>&gt;/dev/null 2&gt;&amp;1</code> at the end of your <code>cd</code> command will take care of both possibilities.</p>
-<p>To understand how it works, try running this more verbose form:</p>
-<pre><code>#!/bin/bash
-
-SOURCE=&quot;${BASH_SOURCE[0]}&quot;
-while [ -h &quot;$SOURCE&quot; ]; do # resolve $SOURCE until the file is no longer a symlink
-  TARGET=&quot;$(readlink &quot;$SOURCE&quot;)&quot;
-  if [[ $TARGET == /* ]]; then
-    echo &quot;SOURCE '$SOURCE' is an absolute symlink to '$TARGET'&quot;
-    SOURCE=&quot;$TARGET&quot;
-  else
-    DIR=&quot;$( dirname &quot;$SOURCE&quot; )&quot;
-    echo &quot;SOURCE '$SOURCE' is a relative symlink to '$TARGET' (relative to '$DIR')&quot;
-    SOURCE=&quot;$DIR/$TARGET&quot; # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
-  fi
-done
-echo &quot;SOURCE is '$SOURCE'&quot;
-RDIR=&quot;$( dirname &quot;$SOURCE&quot; )&quot;
-DIR=&quot;$( cd -P &quot;$( dirname &quot;$SOURCE&quot; )&quot; &gt;/dev/null 2&gt;&amp;1 &amp;&amp; pwd )&quot;
-if [ &quot;$DIR&quot; != &quot;$RDIR&quot; ]; then
-  echo &quot;DIR '$RDIR' resolves to '$DIR'&quot;
-fi
-echo &quot;DIR is '$DIR'&quot;
-</code></pre>
-<p>And it will print something like:</p>
-<pre class="lang-none prettyprint-override"><code>SOURCE './scriptdir.sh' is a relative symlink to 'sym2/scriptdir.sh' (relative to '.')
-SOURCE is './sym2/scriptdir.sh'
-DIR './sym2' resolves to '/home/ubuntu/dotfiles/fo fo/real/real1/real2'
-DIR is '/home/ubuntu/dotfiles/fo fo/real/real1/real2'
-</code></pre>
-</tr></td><tr><td><p>I usually do:</p>
-
-<pre><code>LIBDIR=$(dirname "$(readlink -f "$(type -P $0 || echo $0)")")
-source $LIBDIR/lib.sh
-</code></pre>
-</tr></td><tr><td><p>Hmm, if in the path basename &amp; dirname are just not going to cut it
-and walking the path is hard (what if parent didn't export PATH!).
-However, the shell has to have an open handle to its script, and in
-bash the handle is #255.</p>
-
-<pre><code>SELF=`readlink /proc/$$/fd/255`
-</code></pre>
-
-<p>works for me.</p>
-</tr></td><tr><td><p>Short answer:</p>
-
-<pre><code>`dirname $0`
-</code></pre>
-
-<p>or (<a href="http://mywiki.wooledge.org/BashFAQ/082" rel="noreferrer">preferably</a>):</p>
-
-<pre><code>$(dirname "$0")
-</code></pre>
-</tr></td><tr><td><p>This should do it:</p>
-
-<pre><code>DIR="$(dirname "$(readlink -f "$0")")"
-</code></pre>
-
-<p>This works with symlinks and spaces in path.</p>
-
-<p>See the man pages for <code>dirname</code> and <code>readlink</code>.</p>
-
-<p>From the comment track it seems not to work with Mac OS.
-I have no idea why that is. Any suggestions?</p>
-</tr></td><tr><td><p>Try the following cross-compatible solution:</p>
-
-<pre><code>CWD="$(cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")" &amp;&amp; pwd -P)"
-</code></pre>
-
-<p>as the commands such as <code>realpath</code> or <code>readlink</code> could be not available (depending on the operating system).</p>
-
-<p>Note: In Bash, it's recommended to use<code>${BASH_SOURCE[0]}</code> instead of <code>$0</code>, otherwise path can break when sourcing the file (<code>source</code>/<code>.</code>).</p>
-
-<p>Alternatively you can try the following function in bash:</p>
-
-<pre><code>realpath () {
-  [[ $1 = /* ]] &amp;&amp; echo "$1" || echo "$PWD/${1#./}"
-}
-</code></pre>
-
-<p>This function takes 1 argument. If argument has already absolute path, print it as it is, otherwise print <code>$PWD</code> variable + filename argument (without <code>./</code> prefix).</p>
-
-<p>Related:</p>
-
-<ul>
-<li><a href="https://stackoverflow.com/questions/3349105/how-to-set-current-working-directory-to-the-directory-of-the-script">How to set current working directory to the directory of the script?</a></li>
-<li><a href="https://stackoverflow.com/questions/3572030/bash-script-absolute-path-with-osx">Bash script absolute path with OS X</a></li>
-<li><a href="https://stackoverflow.com/questions/4774054/reliable-way-for-a-bash-script-to-get-the-full-path-to-itself/20265654#20265654">Reliable way for a Bash script to get the full path to itself</a></li>
-</ul>
-</tr></td><tr><td><p>Very late to the discussion, but try something like this:</p>
-
-<pre><code>function get_realpath() {
-
-if [[ -f "$1" ]]
-then
-    # file *must* exist
-    if cd "$(echo "${1%/*}")" &amp;&gt;/dev/null
-    then
-        # file *may* not be local
-        # exception is ./file.ext
-        # try 'cd .; cd -;' *works!*
-        local tmppwd="$PWD"
-        cd - &amp;&gt;/dev/null
-    else
-        # file *must* be local
-        local tmppwd="$PWD"
-    fi
-else
-    # file *cannot* exist
-    return 1 # failure
-fi
-
-# reassemble realpath
-echo "$tmppwd"/"${1##*/}"
-return 0 # success
-
-}
-
-function get_dirname(){
-
-local realpath="$(get_realpath "$1")"
-if (( $? )) # true when non-zero.
-then
-    return $? # failure
-fi
-echo "${realpath%/*}"
-return 0 # success
-
-}
-
-# Then from the top level:
-get_dirname './script.sh'
-
-# Or Within a script:
-get_dirname "$0"
-
-# Can even test the outcome!
-if (( $? )) # true when non-zero.
-then
-    exit 1 # failure
-fi
-</code></pre>
-
-<p>These functions and related tools are part of our product that has been made available to the community for free and can be found at GitHub as <a href="http://asymlabs.github.io/realpath-lib/" rel="nofollow">realpath-lib</a>.  It's simple, clean and well documented (great for learning), pure Bash and has no dependencies. Good for cross-platform use too.  So for the above example, within a script you could simply:</p>
-
-<pre><code>source '/path/to/realpath-lib'
-
-get_dirname "$0"
-
-if (( $? )) # true when non-zero.
-then
-    exit 1 # failure
-fi
-</code></pre>
-
-<p>That's all!</p>
-</tr></td><tr><td><p>The best compact solution in my view would be:</p>
-
-<pre><code>"$( cd "$( echo "${BASH_SOURCE[0]%/*}" )"; pwd )"
-</code></pre>
-
-<p>There is no reliance on anything other than Bash.  The use of <code>dirname</code>, <code>readlink</code> and <code>basename</code> will eventually lead to compatibility issues, so they are best avoided if at all possible. </p>
-</tr></td><tr><td><p>Here's an excerpt from my answer to <a href="https://stackoverflow.com/a/20227287/2955202">shell script: check directory name and convert to lowercase</a> in which I demonstrate not only how to solve this problem with very basic POSIX-specified utilities, I also address <strong><em>how to very simply store the function's results in a returned variable...</em></strong></p>
-
-<p>...Well, as you can see, with <strong>some help</strong>, I hit upon a pretty simple and very powerful solution: </p>
-
-<p>I can pass the function a sort of <em>messenger variable</em> and dereference any explicit use of the resulting function's argument's <code>$1</code> name with <code>eval</code> as necessary, and, upon the function routine's completion, I use <code>eval</code> and a backslashed quoting trick to assign my messenger variable the value I desire without ever having to know its name.</p>
-
-<p>In full disclosure, ... [I found the messenger variable portion of this] and at <a href="http://www.etalabs.net/sh_tricks.html" rel="nofollow noreferrer">Rich's sh tricks</a> and I have also excerpted the relevant portion of his page below my own answer's excerpt.</p>
-
-<p>...
-<strong>EXCERPT:</strong>
-...</p>
-
-<p>Though not strictly POSIX yet, <a href="http://www.gnu.org/software/coreutils/manual/html_node/realpath-invocation.html" rel="nofollow noreferrer"><strong>realpath</a> is a GNU core app since 2012</strong>. Full disclosure: never heard of it before I noticed it in the <code>info coreutils</code> TOC and immediately thought of [the linked] question, but using the following function as demonstrated should reliably, (soon POSIXLY?), and, I hope, efficiently 
-provide its caller with an absolutely sourced <code>$0</code>:</p>
-
-<pre><code>% _abs_0() { 
-&gt; o1="${1%%/*}"; ${o1:="${1}"}; ${o1:=`realpath -s "${1}"`}; eval "$1=\${o1}"; 
-&gt; }  
-% _abs_0 ${abs0:="${0}"} ; printf %s\\n "${abs0}"
-/no/more/dots/in/your/path2.sh
-</code></pre>
-
-<p><strong>EDIT:</strong> It may be worth highlighting that this solution uses <a href="http://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html#tag_02_06_02" rel="nofollow noreferrer">POSIX parameter expansion</a> to first check if the path actually needs expanding and resolving at all before attempting to do so. This should <strong>return an absolutely sourced <code>$0</code>via a messenger variable</strong> <em>(with the notable exception that it will preserve <code>symlinks</code>)</em> as <strong>efficiently</strong> as I could imagine it could be done <strong>whether or not the path is already absolute.</strong> 
-...</p>
-
-<p>(<strong><em>minor edit</strong>: before finding <code>realpath</code> in the docs, I had at least pared down my version of [the version below] not to depend on the time field [as it does in the first <code>ps</code> command], but, fair warning, after testing some I'm less convinced <code>ps</code> is fully reliable in its command path expansion capacity</em>) </p>
-
-<p>On the other hand, you could do this:</p>
-
-<pre><code>ps ww -fp $$ | grep -Eo '/[^:]*'"${0#*/}"
-
-eval "abs0=${`ps ww -fp $$ | grep -Eo ' /'`#?}"
-</code></pre>
-
-<p>...
-<strong>And from <a href="http://www.etalabs.net/sh_tricks.html" rel="nofollow noreferrer">Rich's sh tricks</a>:</strong>
-...</p>
-
-<p><strong>Returning strings from a shell function</strong></p>
-
-<p>As can be seen from the above pitfall of command substitution, stdout is not a good avenue for shell functions to return strings to their caller, unless the output is in a format where trailing newlines are insignificant. Certainly such practice is not acceptable for functions meant to deal with arbitrary strings. So, what can be done?</p>
-
-<p>Try this:</p>
-
-<pre><code>func () {
-body here
-eval "$1=\${foo}"
-}
-</code></pre>
-
-<p>Of course <code>${foo}</code> could be replaced by any sort of substitution. The key trick here is the eval line and the use of escaping. The <code>“$1”</code> is expanded when the argument to eval is constructed by the main command parser. But the <code>“${foo}”</code> is not expanded at this stage, because the <code>“$”</code> has been quoted. Instead, it’s expanded when eval evaluates its argument. If it’s not clear why this is important, consider how the following would be bad:</p>
-
-<pre><code>foo='hello ; rm -rf /'
-dest=bar
-eval "$dest=$foo"
-</code></pre>
-
-<p>But of course the following version is perfectly safe:</p>
-
-<pre><code>foo='hello ; rm -rf /'
-dest=bar
-eval "$dest=\$foo"
-</code></pre>
-
-<p>Note that in the original example, <code>“$1”</code> was used to allow the caller to pass the destination variable name as an argument the function. If your function needs to use the shift command, for instance to handle the remaining arguments as <code>“$@”</code>, then it may be useful to save the value of <code>“$1”</code> in a temporary variable at the beginning of the function.</p>
-</tr></td><tr><td><p>I believe I've got this one. I'm late to the party, but I think some will appreciate it being here if they come across this thread. The comments should explain:</p>
-
-<pre><code>#!/bin/sh # dash bash ksh # !zsh (issues). G. Nixon, 12/2013. Public domain.
-
-## 'linkread' or 'fullpath' or (you choose) is a little tool to recursively
-## dereference symbolic links (ala 'readlink') until the originating file
-## is found. This is effectively the same function provided in stdlib.h as
-## 'realpath' and on the command line in GNU 'readlink -f'.
-
-## Neither of these tools, however, are particularly accessible on the many
-## systems that do not have the GNU implementation of readlink, nor ship
-## with a system compiler (not to mention the requisite knowledge of C).
-
-## This script is written with portability and (to the extent possible, speed)
-## in mind, hence the use of printf for echo and case statements where they
-## can be substituded for test, though I've had to scale back a bit on that.
-
-## It is (to the best of my knowledge) written in standard POSIX shell, and
-## has been tested with bash-as-bin-sh, dash, and ksh93. zsh seems to have
-## issues with it, though I'm not sure why; so probably best to avoid for now.
-
-## Particularly useful (in fact, the reason I wrote this) is the fact that
-## it can be used within a shell script to find the path of the script itself.
-## (I am sure the shell knows this already; but most likely for the sake of
-## security it is not made readily available. The implementation of "$0"
-## specificies that the $0 must be the location of **last** symbolic link in
-## a chain, or wherever it resides in the path.) This can be used for some
-## ...interesting things, like self-duplicating and self-modifiying scripts.
-
-## Currently supported are three errors: whether the file specified exists
-## (ala ENOENT), whether its target exists/is accessible; and the special
-## case of when a sybolic link references itself "foo -&gt; foo": a common error
-## for beginners, since 'ln' does not produce an error if the order of link
-## and target are reversed on the command line. (See POSIX signal ELOOP.)
-
-## It would probably be rather simple to write to use this as a basis for
-## a pure shell implementation of the 'symlinks' util included with Linux.
-
-## As an aside, the amount of code below **completely** belies the amount
-## effort it took to get this right -- but I guess that's coding for you.
-
-##===-------------------------------------------------------------------===##
-
-for argv; do :; done # Last parameter on command line, for options parsing.
-
-## Error messages. Use functions so that we can sub in when the error occurs.
-
-recurses(){ printf "Self-referential:\n\t$argv -&gt;\n\t$argv\n" ;}
-dangling(){ printf "Broken symlink:\n\t$argv -&gt;\n\t"$(readlink "$argv")"\n" ;}
-errnoent(){ printf "No such file: "$@"\n" ;} # Borrow a horrible signal name.
-
-# Probably best not to install as 'pathfull', if you can avoid it.
-
-pathfull(){ cd "$(dirname "$@")"; link="$(readlink "$(basename "$@")")"
-
-## 'test and 'ls' report different status for bad symlinks, so we use this.
-
- if [ ! -e "$@" ]; then if $(ls -d "$@" 2&gt;/dev/null) 2&gt;/dev/null;  then
-    errnoent 1&gt;&amp;2; exit 1; elif [ ! -e "$@" -a "$link" = "$@" ];   then
-    recurses 1&gt;&amp;2; exit 1; elif [ ! -e "$@" ] &amp;&amp; [ ! -z "$link" ]; then
-    dangling 1&gt;&amp;2; exit 1; fi
- fi
-
-## Not a link, but there might be one in the path, so 'cd' and 'pwd'.
-
- if [ -z "$link" ]; then if [ "$(dirname "$@" | cut -c1)" = '/' ]; then
-   printf "$@\n"; exit 0; else printf "$(pwd)/$(basename "$@")\n"; fi; exit 0
- fi
-
-## Walk the symlinks back to the origin. Calls itself recursivly as needed.
-
- while [ "$link" ]; do
-   cd "$(dirname "$link")"; newlink="$(readlink "$(basename "$link")")"
-   case "$newlink" in
-    "$link") dangling 1&gt;&amp;2 &amp;&amp; exit 1                                       ;;
-         '') printf "$(pwd)/$(basename "$link")\n"; exit 0                 ;;
-          *) link="$newlink" &amp;&amp; pathfull "$link"                           ;;
-   esac
- done
- printf "$(pwd)/$(basename "$newlink")\n"
-}
-
-## Demo. Install somewhere deep in the filesystem, then symlink somewhere 
-## else, symlink again (maybe with a different name) elsewhere, and link
-## back into the directory you started in (or something.) The absolute path
-## of the script will always be reported in the usage, along with "$0".
-
-if [ -z "$argv" ]; then scriptname="$(pathfull "$0")"
-
-# Yay ANSI l33t codes! Fancy.
- printf "\n\033[3mfrom/as: \033[4m$0\033[0m\n\n\033[1mUSAGE:\033[0m   "
- printf "\033[4m$scriptname\033[24m [ link | file | dir ]\n\n         "
- printf "Recursive readlink for the authoritative file, symlink after "
- printf "symlink.\n\n\n         \033[4m$scriptname\033[24m\n\n        "
- printf " From within an invocation of a script, locate the script's "
- printf "own file\n         (no matter where it has been linked or "
- printf "from where it is being called).\n\n"
-
-else pathfull "$@"
-fi
-</code></pre>
-</tr></td><tr><td><p>I want to make sure that the script is running in its directory. So</p>
-
-<pre><code>cd $(dirname $(which $0) )
-</code></pre>
-
-<p>After this, if you really want to know where the you are running then run the command below.</p>
-
-<pre><code>DIR=$(/usr/bin/pwd)
-</code></pre>
-</tr></td><tr><td><p>This is the only way I've found to tell reliably:</p>
-
-<pre><code>SCRIPT_DIR=$(dirname $(cd "$(dirname "$BASH_SOURCE")"; pwd))
-</code></pre>
-</tr></td><tr><td><p>This worked for me when the other answers here did not:</p>
-
-<pre><code>thisScriptPath=`realpath $0`
-thisDirPath=`dirname $thisScriptPath`
-echo $thisDirPath
-</code></pre>
-</tr></td><tr><td><p>Here is the simple, correct way:</p>
-
-<pre><code>actual_path=$(readlink -f "${BASH_SOURCE[0]}")
-script_dir=$(dirname "$actual_path")
-</code></pre>
-
-<p>Explanation:</p>
-
-<ul>
-<li><p><strong><code>${BASH_SOURCE[0]}</code></strong> - the full path to the script. The value of this will be correct even when the script is being sourced, e.g. <code>source &lt;(echo 'echo $0')</code> prints <strong>bash</strong>, while replacing it with <code>${BASH_SOURCE[0]}</code> will print the full path of the script. (Of course, this assumes you're OK taking a dependency on Bash.)</p></li>
-<li><p><strong><code>readlink -f</code></strong> - Recursively resolves any symlinks in the specified path. This is a GNU extension, and not available on (for example) BSD systems. If you're running a Mac, you can use Homebrew to install GNU <code>coreutils</code> and supplant this with <strong><code>greadlink -f</code></strong>.</p></li>
-<li><p>And of course <strong><code>dirname</code></strong> gets the parent directory of the path.</p></li>
-</ul>
-</tr></td><tr><td><pre><code>ME=`type -p $0`
-MDIR="${ME%/*}"
-WORK_DIR=$(cd $MDIR &amp;&amp; pwd)
-</code></pre>
-</tr></td><tr><td><p>The <code>dirname</code> command is the most basic, simply parsing the path up to the filename off of the <code>$0</code> (script name) variable:</p>
-
-<pre><code>dirname "$0"
-</code></pre>
-
-<p>But, as <strong>matt b</strong> pointed out, the path returned is different depending on how the script is called. <code>pwd</code> doesn't do the job because that only tells you what the current directory is, not what directory the script resides in. Additionally, if a symbolic link to a script is executed, you're going to get a (probably relative) path to where the link resides, not the actual script. </p>
-
-<p>Some others have mentioned the <code>readlink</code> command, but at its simplest, you can use:</p>
-
-<pre><code>dirname "$(readlink -f "$0")"
-</code></pre>
-
-<p><code>readlink</code> will resolve the script path to an absolute path from the root of the filesystem. So, any paths containing single or double dots, tildes and/or symbolic links will be resolved to a full path.</p>
-
-<p>Here's a script demonstrating each of these, <code>whatdir.sh</code>:</p>
-
-<pre><code>#!/bin/bash
-echo "pwd: `pwd`"
-echo "\$0: $0"
-echo "basename: `basename $0`"
-echo "dirname: `dirname $0`"
-echo "dirname/readlink: $(dirname $(readlink -f $0))"
-</code></pre>
-
-<p>Running this script in my home dir, using a relative path:</p>
-
-<pre class="lang-none prettyprint-override"><code>&gt;&gt;&gt;$ ./whatdir.sh 
-pwd: /Users/phatblat
-$0: ./whatdir.sh
-basename: whatdir.sh
-dirname: .
-dirname/readlink: /Users/phatblat
-</code></pre>
-
-<p>Again, but using the full path to the script:</p>
-
-<pre class="lang-none prettyprint-override"><code>&gt;&gt;&gt;$ /Users/phatblat/whatdir.sh 
-pwd: /Users/phatblat
-$0: /Users/phatblat/whatdir.sh
-basename: whatdir.sh
-dirname: /Users/phatblat
-dirname/readlink: /Users/phatblat
-</code></pre>
-
-<p>Now changing directories:</p>
-
-<pre class="lang-none prettyprint-override"><code>&gt;&gt;&gt;$ cd /tmp
-&gt;&gt;&gt;$ ~/whatdir.sh 
-pwd: /tmp
-$0: /Users/phatblat/whatdir.sh
-basename: whatdir.sh
-dirname: /Users/phatblat
-dirname/readlink: /Users/phatblat
-</code></pre>
-
-<p>And finally using a symbolic link to execute the script:</p>
-
-<pre class="lang-none prettyprint-override"><code>&gt;&gt;&gt;$ ln -s ~/whatdir.sh whatdirlink.sh
-&gt;&gt;&gt;$ ./whatdirlink.sh 
-pwd: /tmp
-$0: ./whatdirlink.sh
-basename: whatdirlink.sh
-dirname: .
-dirname/readlink: /Users/phatblat
-</code></pre>
-</tr></td><tr><td><pre><code>function getScriptAbsoluteDir { # fold&gt;&gt;
-    # @description used to get the script path
-    # @param $1 the script $0 parameter
-    local script_invoke_path="$1"
-    local cwd=`pwd`
-
-    # absolute path ? if so, the first character is a /
-    if test "x${script_invoke_path:0:1}" = 'x/'
-    then
-        RESULT=`dirname "$script_invoke_path"`
-    else
-        RESULT=`dirname "$cwd/$script_invoke_path"`
-    fi
-} # &lt;&lt;fold
-</code></pre>
-</tr></td><tr><td><p>This is a slight revision to the solution e-satis and 3bcdnlklvc04a pointed out in <a href="https://stackoverflow.com/questions/59895/can-a-bash-script-tell-what-directory-its-in/179231#179231" title="their answer">their answer</a>:</p>
-
-<pre><code>SCRIPT_DIR=''
-pushd "$(dirname "$(readlink -f "$BASH_SOURCE")")" &gt; /dev/null &amp;&amp; {
-    SCRIPT_DIR="$PWD"
-    popd &gt; /dev/null
-}    
-</code></pre>
-
-<p>This should still work in all the cases they listed.</p>
-
-<p>This will prevent <code>popd</code> after a failed <code>pushd</code>, thanks to konsolebox.</p>
-</tr></td><tr><td><p>None of these worked for a bash script launched by Finder in OS X - I ended up using:</p>
-
-<pre><code>SCRIPT_LOC="`ps -p $$ | sed /PID/d | sed s:.*/Network/:/Network/: |
-sed s:.*/Volumes/:/Volumes/:`"
-</code></pre>
-
-<p>Not pretty, but it gets the job done.</p>
-</tr></td><tr><td><pre><code>SCRIPT_DIR=$( cd ${0%/*} &amp;&amp; pwd -P )
-</code></pre>
-</tr></td><tr><td><p>I tried all of these and none worked. One was very close but had a tiny bug that broke it badly; they forgot to wrap the path in quotation marks.</p>
-
-<p>Also a lot of people assume you're running the script from a shell so they forget when you open a new script it defaults to your home.</p>
-
-<p>Try this directory on for size:</p>
-
-<pre><code>/var/No one/Thought/About Spaces Being/In a Directory/Name/And Here's your file.text
-</code></pre>
-
-<p>This gets it right regardless how or where you run it:</p>
-
-<pre><code>#!/bin/bash
-echo "pwd: `pwd`"
-echo "\$0: $0"
-echo "basename: `basename "$0"`"
-echo "dirname: `dirname "$0"`"
-</code></pre>
-
-<p>So to make it actually useful here's how to change to the directory of the running script:</p>
-
-<pre><code>cd "`dirname "$0"`"
-</code></pre>
-</tr></td><tr><td><p>Use a combination of readlink to canonicalize the name (with a bonus of following it back to its source if it is a symlink) and dirname to extract the directory name:</p>
-
-<pre><code>script="`readlink -f "${BASH_SOURCE[0]}"`"
-dir="`dirname "$script"`"
-</code></pre>
-</tr></td><tr><td><pre><code>$(dirname "$(readlink -f "$BASH_SOURCE")")
-</code></pre>
-</tr></td><tr><td><p>This solution applies only to bash. Note that the commonly supplied answer <code>${BASH_SOURCE[0]}</code> won't work if you try to find the path from within a function.</p>
-
-<p>I've found this line to always work, regardless of whether the file is being sourced or run as a script.</p>
-
-<pre><code>dirname ${BASH_SOURCE[${#BASH_SOURCE[@]} - 1]}
-</code></pre>
-
-<p>If you want to follow symlinks use <code>readlink</code> on the path you get above, recursively or non-recursively.</p>
-
-<p>Here's a script to try it out and compare it to other proposed solutions. Invoke it as <code>source test1/test2/test_script.sh</code> or <code>bash test1/test2/test_script.sh</code>.</p>
-
-<pre><code>#
-# Location: test1/test2/test_script.sh
-#
-echo $0
-echo $_
-echo ${BASH_SOURCE}
-echo ${BASH_SOURCE[${#BASH_SOURCE[@]} - 1]}
-
-cur_file="${BASH_SOURCE[${#BASH_SOURCE[@]} - 1]}"
-cur_dir="$(dirname "${cur_file}")"
-source "${cur_dir}/func_def.sh"
-
-function test_within_func_inside {
-    echo ${BASH_SOURCE}
-    echo ${BASH_SOURCE[${#BASH_SOURCE[@]} - 1]}
-}
-
-echo "Testing within function inside"
-test_within_func_inside
-
-echo "Testing within function outside"
-test_within_func_outside
-
-#
-# Location: test1/test2/func_def.sh
-#
-function test_within_func_outside {
-    echo ${BASH_SOURCE}
-    echo ${BASH_SOURCE[${#BASH_SOURCE[@]} - 1]}
-}
-</code></pre>
-
-<p>The reason the one-liner works is explained by the use of the <code>BASH_SOURCE</code> environment variable and its associate <code>FUNCNAME</code>.</p>
+</tr></td><tr><td><p>From <a href="https://docs.python.org/3/reference/expressions.html#conditional-expressions" rel="noreferrer" title="Conditional expressions">the documentation</a>:</p>
 
 <blockquote>
-  <p>BASH_SOURCE</p>
+  <p>Conditional expressions (sometimes called a “ternary operator”) have the lowest priority of all Python operations.</p>
   
-  <p>An array variable whose members are the source filenames where the corresponding shell function names in the FUNCNAME array variable are  defined.  The shell function ${FUNCNAME[$i]} is defined in the file ${BASH_SOURCE[$i]} and called from ${BASH_SOURCE[$i+1]}.</p>
+  <p>The expression <code>x if C else y</code> first evaluates the condition, <em>C</em> (<em>not x</em>); if <em>C</em> is true, <em>x</em> is evaluated and its value is returned; otherwise, <em>y</em> is evaluated and its value is returned.</p>
   
-  <p>FUNCNAME</p>
-  
-  <p>An array variable containing the names of all shell functions currently in the execution call stack.  The element with index 0 is the name of  any currently-executing  shell  function.  The bottom-most element (the one with the highest index) is "main".  This variable exists only when a shell function is executing.  Assignments to FUNCNAME have no effect and return an error status.  If FUNCNAME is unset, it loses its special properties, even if it is subsequently reset.  </p>
-  
-  <p>This variable can be used with BASH_LINENO and BASH_SOURCE.  Each element of FUNCNAME has corresponding elements in BASH_LINENO and BASH_SOURCE to describe the call stack.  For instance, ${FUNCNAME[$i]} was called from the file ${BASH_SOURCE[$i+1]}  at  line  number  ${BASH_LINENO[$i]}.  The caller builtin displays the current call stack using this information.</p>
+  <p>See <a href="https://www.python.org/dev/peps/pep-0308/" rel="noreferrer" title="PEP 308 -- Conditional Expressions">PEP 308</a> for more details about conditional expressions.</p>
 </blockquote>
 
-<p>[Source: Bash manual]</p>
-</tr></td><tr><td><pre><code>FOLDERNAME=${PWD##*/}
+<p>New since version 2.5.</p>
+</tr></td><tr><td><p>For versions prior to 2.5, there's the trick:</p>
+
+<pre><code>[expression] and [on_true] or [on_false]
 </code></pre>
 
-<p>that is the quickest way I know</p>
-</tr></td><tr><td><pre><code>cur_dir=`old=\`pwd\`; cd \`dirname $0\`; echo \`pwd\`; cd $old;`
+<p>It can give wrong results when <code>on_true</code> 
+ has a false boolean value.<sup>1</sup><br>
+Although it does have the benefit of evaluating expressions left to right, which is clearer in my opinion.</p>
+
+<p><sub>1. <a href="http://docs.python.org/3.3/faq/programming.html#is-there-an-equivalent-of-c-s-ternary-operator" rel="noreferrer">Is there an equivalent of C’s ”?:” ternary operator?</a></sub></p>
+</tr></td><tr><td><p>You can index into a tuple:</p>
+
+<pre><code>(falseValue, trueValue)[test]
 </code></pre>
-</tr></td><tr><td><p>For systems having GNU coreutils <code>readlink</code> (eg. linux):</p>
 
-<pre><code>$(readlink -f "$(dirname "$0")")
+<p><code>test</code> needs to return <em>True</em> or <em>False</em>.<br>
+It might be safer to always implement it as:</p>
+
+<pre><code>(falseValue, trueValue)[test == True]
 </code></pre>
 
-<p>There's no need to use <code>BASH_SOURCE</code> when <code>$0</code> contains the script filename.</p>
-</tr></td><tr><td><p>Based on <a href="https://stackoverflow.com/questions/59895/can-a-bash-script-tell-which-directory-it-is-stored-in/246128#246128">this answer</a>, I suggest the clarified version that get <code>SCRIPT_HOME</code> as the containing folder of any current running bash script</p>
+<p>or you can use the built-in <a href="https://docs.python.org/3.3/library/functions.html#bool" rel="noreferrer" title="bool"><code>bool()</code></a> to assure a <a href="https://en.wikipedia.org/wiki/Boolean_data_type" rel="noreferrer" title="Boolean data type">Boolean</a> value:</p>
 
-<pre><code>s=${BASH_SOURCE[0]} ; s=`dirname $s` ; SCRIPT_HOME=`cd $s ; pwd`
-echo $SCRIPT_HOME
+<pre><code>(falseValue, trueValue)[bool(&lt;expression&gt;)]
 </code></pre>
-</tr></td><tr><td><p>This <em>one-liner</em> works on CYGWIN even if the script has been called from <em>Windows</em> with <code>bash -c &lt;script&gt;</code>:</p>
+</tr></td><tr><td><p>You might often find</p>
 
-<pre><code>set mydir="$(cygpath "$(dirname "$0")")"
+<pre><code>cond and on_true or on_false
 </code></pre>
-</tr></td><tr><td><p><code>$0</code> is not a reliable way to get current script path. For example this is my <code>.xprofile</code>:</p>
 
-<pre><code>#!/bin/bash
-echo "$0 $1 $2"
-echo "${BASH_SOURCE[0]}"
-# $dir/my_script.sh &amp;
+<p>but this lead to problem when on_true == 0</p>
+
+<pre><code>&gt;&gt;&gt; x = 0
+&gt;&gt;&gt; print x == 0 and 0 or 1 
+1
+&gt;&gt;&gt; x = 1
+&gt;&gt;&gt; print x == 0 and 0 or 1 
+1
+</code></pre>
+
+<p>where you would expect for a  normal ternary operator this result</p>
+
+<pre><code>&gt;&gt;&gt; x = 0
+&gt;&gt;&gt; print 0 if x == 0 else 1 
+0
+&gt;&gt;&gt; x = 1
+&gt;&gt;&gt; print 0 if x == 0 else 1 
+1
+</code></pre>
+</tr></td><tr><td><p>Simulating the python ternary operator.</p>
+
+<p>For example</p>
+
+<pre><code>a, b, x, y = 1, 2, 'a greather than b', 'b greater than a'
+result = (lambda:y, lambda:x)[a &gt; b]()
+</code></pre>
+
+<p>output:</p>
+
+<pre><code>'b greater than a'
+</code></pre>
+</tr></td><tr><td><p>For Python 2.5 and newer there is a specific syntax:</p>
+
+<pre><code>[on_true] if [cond] else [on_false]
+</code></pre>
+
+<p>In older Pythons a ternary operator is not implemented but it's possible to simulate it.</p>
+
+<pre><code>cond and on_true or on_false
+</code></pre>
+
+<p>Though, there is a potential problem, which if <code>cond</code> evaluates to <code>True</code> and <code>on_true</code> evaluates to <code>False</code> then <code>on_false</code> is returned instead of <code>on_true</code>. If you want this behavior the method is OK, otherwise use this:</p>
+
+<pre><code>{True: on_true, False: on_false}[cond is True] # is True, not == True
+</code></pre>
+
+<p>which can be wrapped by:</p>
+
+<pre><code>def q(cond, on_true, on_false)
+    return {True: on_true, False: on_false}[cond is True]
+</code></pre>
+
+<p>and used this way:</p>
+
+<pre><code>q(cond, on_true, on_false)
+</code></pre>
+
+<p>It is compatible with all Python versions.</p>
+</tr></td><tr><td><blockquote>
+  <h1>Does Python have a ternary conditional operator?</h1>
+</blockquote>
+
+<p>Yes. From the <a href="https://docs.python.org/reference/grammar.html" rel="noreferrer">grammar file</a>:</p>
+
+<pre><code>test: or_test ['if' or_test 'else' test] | lambdef
+</code></pre>
+
+<p>The part of interest is:</p>
+
+<pre><code>or_test ['if' or_test 'else' test]
+</code></pre>
+
+<p>So, a ternary conditional operation is of the form:</p>
+
+<pre><code>expression1 if expression2 else expression3
+</code></pre>
+
+<p><code>expression3</code> will be lazily evaluated (that is, evaluated only if <code>expression2</code> is false in a boolean context). And because of the recursive definition, you can chain them indefinitely (though it may considered bad style.)</p>
+
+<pre><code>expression1 if expression2 else expression3 if expression4 else expression5 # and so on
+</code></pre>
+
+<h3>A note on usage:</h3>
+
+<p>Note that every <code>if</code> must be followed with an <code>else</code>. People learning list comprehensions and generator expressions may find this to be a difficult lesson to learn - the following will not work, as Python expects a third expression for an else:</p>
+
+<pre><code>[expression1 if expression2 for element in iterable]
+#                          ^-- need an else here
+</code></pre>
+
+<p>which raises a <code>SyntaxError: invalid syntax</code>.
+So the above is either an incomplete piece of logic (perhaps the user expects a no-op in the false condition) or what may be intended is to use expression2 as a filter - notes that the following is legal Python:</p>
+
+<pre><code>[expression1 for element in iterable if expression2]
+</code></pre>
+
+<p><code>expression2</code> works as a filter for the list comprehension, and is <em>not</em> a ternary conditional operator.</p>
+
+<h3>Alternative syntax for a more narrow case:</h3>
+
+<p>You may find it somewhat painful to write the following:</p>
+
+<pre><code>expression1 if expression1 else expression2
+</code></pre>
+
+<p><code>expression1</code> will have to be evaluated twice with the above usage. It can limit redundancy if it is simply a local variable. However, a common and performant Pythonic idiom for this use-case is to use <code>or</code>'s shortcutting behavior:</p>
+
+<pre><code>expression1 or expression2
+</code></pre>
+
+<p>which is equivalent in semantics. Note that some style-guides may limit this usage on the grounds of clarity - it does pack a lot of meaning into very little syntax.</p>
+</tr></td><tr><td><h2><strong>Ternary Operator in different programming Languages</strong></h2>
+
+<p>Here I just try to show some important difference in <code>ternary operator</code> between a couple of programming languages.</p>
+
+<blockquote>
+  <p><em>Ternary Operator in Javascript</em></p>
+</blockquote>
+
+<pre><code>var a = true ? 1 : 0;
+# 1
+var b = false ? 1 : 0;
+# 0
 </code></pre>
 
 <blockquote>
-  <p>cd /tmp &amp;&amp; ~/.xprofile &amp;&amp; source ~/.xprofile</p>
+  <p><em>Ternary Operator in Ruby</em></p>
 </blockquote>
 
-<pre><code>/home/puchuu/.xprofile  
-/home/puchuu/.xprofile
--bash  
-/home/puchuu/.xprofile
-</code></pre>
-
-<p>So please use <code>BASH_SOURCE</code> instead.</p>
-</tr></td><tr><td><p>(Note: this answer has been through many revisions as I improved on the original.  As of the last revision, no one had commented or voted yet.)</p>
-
-<p>I am adding this answer as much for my own benefit - to remember it and gather comments - as for anyone else's.  The key part of the answer is that I am reducing the scope of the problem: I forbid indirect execution of the script via the path (as in <code>/bin/sh [script path relative to path component]</code>).  </p>
-
-<p>This can be detected because <code>$0</code> will be a relative path which does not resolve to any file relative to the current folder.  I believe that direct execution using the <code>#!</code> mechanism always results in an absolute <code>$0</code>, including when the script is found on the path.  </p>
-
-<p>I also require that the pathname and any pathnames along a chain of symbolic links only contain a reasonable subset of characters, notably not <code>\n</code>, <code>&gt;</code>, <code>*</code> or <code>?</code>.  This is required for the parsing logic.  </p>
-
-<p>There are a few more implicit expectations which I will not go into (look at <a href="https://stackoverflow.com/a/4794711/213180">this answer</a>), and I do not attempt to handle deliberate sabotage of <code>$0</code> (so consider any security implications).  I expect this to work on almost any Unix-like system with a Bourne-like <code>/bin/sh</code>.</p>
-
-<p>Comments and suggestions welcome!</p>
-
-<pre><code>#!/bin/sh
-(
-    path="${0}"
-    while test -n "${path}"; do
-        # Make sure we have at least one slash and no leading dash.
-        expr "${path}" : / &gt; /dev/null || path="./${path}"
-        # Filter out bad characters in the path name.
-        expr "${path}" : ".*[*?&lt;&gt;\\]" &gt; /dev/null &amp;&amp; exit 1
-        # Catch embedded new-lines and non-existing (or path-relative) files.
-        # $0 should always be absolute when scripts are invoked through "#!".
-        test "`ls -l -d "${path}" 2&gt; /dev/null | wc -l`" -eq 1 || exit 1
-        # Change to the folder containing the file to resolve relative links.
-        folder=`expr "${path}" : "\(.*/\)[^/][^/]*/*$"` || exit 1
-        path=`expr "x\`ls -l -d "${path}"\`" : "[^&gt;]* -&gt; \(.*\)"`
-        cd "${folder}"
-        # If the last path was not a link then we are in the target folder.
-        test -n "${path}" || pwd
-    done
-)
-</code></pre>
-</tr></td><tr><td><p>No forks (besides subshell) and can handle "alien" pathname forms like those with newlines as some would claim:</p>
-
-<pre><code>IFS= read -rd '' DIR &lt; &lt;([[ $BASH_SOURCE != */* ]] || cd "${BASH_SOURCE%/*}/" &gt;&amp;- &amp;&amp; echo -n "$PWD")
-</code></pre>
-</tr></td><tr><td><p>You can do that just combining the script name (<code>$0</code>) with <code>realpath</code> and/or <code>dirname</code>. It works for Bash and Shell.</p>
-
-<pre class="lang-sh prettyprint-override"><code>#!/usr/bin/env bash
-
-RELATIVE_PATH="${0}"
-RELATIVE_DIR_PATH="$(dirname "${0}")"
-FULL_DIR_PATH="$(realpath "${0}" | xargs dirname)"
-FULL_PATH="$(realpath "${0}")"
-
-echo "RELATIVE_PATH-&gt;${RELATIVE_PATH}&lt;-"
-echo "RELATIVE_DIR_PATH-&gt;${RELATIVE_DIR_PATH}&lt;-"
-echo "FULL_DIR_PATH-&gt;${FULL_DIR_PATH}&lt;-"
-echo "FULL_PATH-&gt;${FULL_PATH}&lt;-"
-</code></pre>
-
-<p>The output will be something like this:</p>
-
-<pre><code># RELATIVE_PATH-&gt;./bin/startup.sh&lt;-
-# RELATIVE_DIR_PATH-&gt;./bin&lt;-
-# FULL_DIR_PATH-&gt;/opt/my_app/bin&lt;-
-# FULL_PATH-&gt;/opt/my_app/bin/startup.sh&lt;-
+<pre><code>a = true ? 1 : 0
+# 1
+b = false ? 1 : 0
+# 0
 </code></pre>
 
 <blockquote>
-  <p>$0 is the name of the script itself</p>
+  <p><em>Ternary operator in Scala</em></p>
 </blockquote>
 
-<p><a href="https://www.tldp.org/LDP/abs/html/othertypesv.html" rel="noreferrer">https://www.tldp.org/LDP/abs/html/othertypesv.html</a></p>
-
-<p>An example: <a href="https://gist.github.com/LozanoMatheus/da96b4e44b89b13ad4af10ac4602ad99" rel="noreferrer">https://gist.github.com/LozanoMatheus/da96b4e44b89b13ad4af10ac4602ad99</a></p>
-</tr></td><tr><td><p>This is what I crafted throughout the years to use as a header on my bash scripts:</p>
-
-<pre><code>## BASE BRAIN - Get where you're from and who you are.
-MYPID=$$
-ORIGINAL_DIR="$(pwd)" # This is not a hot air balloon ride..
-fa="$0" # First Assumption
-ta= # Temporary Assumption
-wa= # Weighed Assumption
-while true; do
-    [ "${fa:0:1}" = "/" ] &amp;&amp; wa=$0 &amp;&amp; break
-    [ "${fa:0:2}" = "./" ] &amp;&amp; ta="${ORIGINAL_DIR}/${fa:2}" &amp;&amp; [ -e "$ta" ] &amp;&amp; wa="$ta" &amp;&amp; break
-    ta="${ORIGINAL_DIR}/${fa}" &amp;&amp; [ -e "$ta" ] &amp;&amp; wa="$ta" &amp;&amp; break
-done
-SW="$wa"
-SWDIR="$(dirname "$wa")"
-SWBIN="$(basename "$wa")"
-unset ta fa wa
-( [ ! -e "$SWDIR/$SWBIN" ] || [ -z "$SW" ] ) &amp;&amp; echo "I could not find my way around :( possible bug in the TOP script" &amp;&amp; exit 1
+<pre><code>val a = true ? 1 | 0
+# 1
+val b = false ? 1 | 0
+# 0
 </code></pre>
-
-<p>at this point your variables SW SWDIR and SWBIN contain what you need.</p>
-</tr></td><tr><td><p>Look at the test at bottom with weird directory names. </p>
-
-<p>To change the working directory to the one where the Bash script is located, you should try this simple, <strong>tested</strong> and verified with <strong>shellcheck</strong> solution:</p>
-
-<pre><code>#!/bin/bash --
-cd "$(dirname "${0}")"/. || exit 2
-</code></pre>
-
-<p>The test:</p>
-
-<pre><code>$ ls 
-application
-$ mkdir "$(printf "\1\2\3\4\5\6\7\10\11\12\13\14\15\16\17\20\21\22\23\24\25\26\27\30\31\32\33\34\35\36\37\40\41\42\43\44\45\46\47testdir" "")"
-$ mv application *testdir
-$ ln -s *testdir "$(printf "\1\2\3\4\5\6\7\10\11\12\13\14\15\16\17\20\21\22\23\24\25\26\27\30\31\32\33\34\35\36\37\40\41\42\43\44\45\46\47symlink" "")"
-$ ls -lb
-total 4
-lrwxrwxrwx 1 jay stacko   46 Mar 30 20:44 \001\002\003\004\005\006\a\b\t\n\v\f\r\016\017\020\021\022\023\024\025\026\027\030\031\032\033\034\035\036\037\ !"#$%&amp;'symlink -&gt; \001\002\003\004\005\006\a\b\t\n\v\f\r\016\017\020\021\022\023\024\025\026\027\030\031\032\033\034\035\036\037\ !"#$%&amp;'testdir
-drwxr-xr-x 2 jay stacko 4096 Mar 30 20:44 \001\002\003\004\005\006\a\b\t\n\v\f\r\016\017\020\021\022\023\024\025\026\027\030\031\032\033\034\035\036\037\ !"#$%&amp;'testdir
-$ *testdir/application &amp;&amp; printf "SUCCESS\n" ""
-SUCCESS
-$ *symlink/application &amp;&amp; printf "SUCCESS\n" ""
-SUCCESS
-</code></pre>
-</tr></td><tr><td><p>These are short ways to get script information:</p>
-
-<p>Folders and files:</p>
-
-<pre><code>    Script: "/tmp/src dir/test.sh"
-    Calling folder: "/tmp/src dir/other"
-</code></pre>
-
-<p>Using these commands:</p>
-
-<pre><code>    echo Script-Dir : `dirname "$(realpath $0)"`
-    echo Script-Dir : $( cd ${0%/*} &amp;&amp; pwd -P )
-    echo Script-Dir : $(dirname "$(readlink -f "$0")")
-    echo
-    echo Script-Name : `basename "$(realpath $0)"`
-    echo Script-Name : `basename $0`
-    echo
-    echo Script-Dir-Relative : `dirname "$BASH_SOURCE"`
-    echo Script-Dir-Relative : `dirname $0`
-    echo
-    echo Calling-Dir : `pwd`
-</code></pre>
-
-<p>And I got this output:</p>
-
-<pre><code>     Script-Dir : /tmp/src dir
-     Script-Dir : /tmp/src dir
-     Script-Dir : /tmp/src dir
-
-     Script-Name : test.sh
-     Script-Name : test.sh
-
-     Script-Dir-Relative : ..
-     Script-Dir-Relative : ..
-
-     Calling-Dir : /tmp/src dir/other
-</code></pre>
-
-<p>Also see: <a href="https://pastebin.com/J8KjxrPF" rel="nofollow noreferrer">https://pastebin.com/J8KjxrPF</a></p>
-</tr></td><tr><td><p>This is how I work it on my scripts:
-<code>pathvar="$( cd "$( dirname $0 )" &amp;&amp; pwd )"</code>
-This will tell you which directory the Launcher (current script) is being executed from.</p>
-</tr></td><tr><td><p>IF YOUR BASH SCRIPT IS A SYMLINK, then this is the way to do it</p>
-
-<pre><code>#!/usr/bin/env bash
-
-dirn="$(dirname "$0")"
-rl="$(readlink "$0")";
-exec_dir="$(dirname $(dirname "$rl"))";
-my_path="$dirn/$exec_dir";
-X="$(cd $(dirname ${my_path}) &amp;&amp; pwd)/$(basename ${my_path})"
-</code></pre>
-
-<p>X is the directory that contains your bash script (the original file, not the symlink). I swear to God this works and is the only way I know of doing this properly.</p>
-</tr></td><tr><td><p>I am tired of coming to this page over and over to copy paste the one-liner in the accepted answer. The problem with that is it is not easy to understand and remember. </p>
-
-<p>Here is an easy-to-remember script:</p>
-
-<pre><code>DIR="$(dirname "${BASH_SOURCE[0]}")"  # get the directory name
-DIR="$(realpath "${DIR}")"    # resolve its full path if need be
-</code></pre>
-</tr></td><tr><td><p>The <a href="https://stackoverflow.com/a/246128/2973534">chosen answer</a> works very well. I'm posting my solution for anyone looking for shorter alternatives that still addresses sourcing, executing, full paths, relative paths, and symlinks. Finally, this will work on MacOS, given that it cannot be assumed that GNU's coreutils' version of readlink is available.</p>
-
-<p>The gotcha is that it's not using Bash, but is easy to use in a Bash script. While OP did not place any constraints on the language of the solution, it's probably best that most have stayed within the Bash world. This is just an alternative, and possibly an unpopular one.</p>
-
-<p>PHP is available on MacOS by default, and installed on a number of other platforms, though not necessarily by default. I realize this is a shortcoming, but I'll leave this here for any people coming from search engines, anyway.</p>
-
-<pre class="lang-bash prettyprint-override"><code>export SOURCE_DIRECTORY="$(php -r 'echo dirname(realpath($argv[1]));' -- "${BASH_SOURCE[0]}")"
-</code></pre>
-</tr></td><tr><td><p>Below stores the script's directory path in <code>dir</code> variable</p>
-
-<p>(also it tries to support being executed in <code>Cygwin</code> using <code>Windows php</code>)</p>
-
-<p>and at last it runs the <code>my-sample-app</code> executable with all arguments passed to this script using <code>"$@"</code></p>
-
-<pre class="lang-sh prettyprint-override"><code>#!/usr/bin/env sh
-
-dir=$(cd "${0%[/\\]*}" &gt; /dev/null &amp;&amp; pwd)
-
-if [ -d /proc/cygdrive ]; then
-    case $(which php) in
-        $(readlink -n /proc/cygdrive)/*)
-            # We are in Cygwin using Windows php, so the path must be translated
-            dir=$(cygpath -m "$dir");
-            ;;
-    esac
-fi
-
-# Runs the executable which is beside this script
-"${dir}/my-sample-app" "$@"
-</code></pre>
-</tr></td><tr><td><p>This is a pretty old question, but I'll add my answer anyway. I usually use</p>
-
-<pre><code>dirname $(which $BASH_SOURCE)
-</code></pre>
-</tr></td><tr><td><p>Here's a command that works under either bash or zsh, and whether executed standalone or sourced:</p>
-
-<pre><code>[ -n "$ZSH_VERSION" ] &amp;&amp; this_dir=$(dirname "${(%):-%x}") \
-    || this_dir=$(dirname "${BASH_SOURCE[0]:-$0}")
-</code></pre>
-
-<h1>How it works</h1>
-
-<h2>The zsh current file expansion: <code>${(%):-%x}</code></h2>
-
-<p><code>${(%):-%x}</code> in zsh expands to the path of the currently-executing file.</p>
-
-<h3>The fallback substitution operator <code>:-</code></h3>
-
-<p>You know already that <code>${...}</code> substitutes variables inside of strings. You might not know that certain operations are possible (in both <a href="http://tldp.org/LDP/abs/html/parameter-substitution.html" rel="nofollow noreferrer">bash</a> and <a href="http://zsh.sourceforge.net/Doc/Release/Expansion.html#Parameter-Expansion" rel="nofollow noreferrer">zsh</a>) on the variables during substitution, like the fallback expansion operator <code>:-</code>:</p>
-
-<pre><code>% x=ok
-% echo "${x}"
-ok
-
-% echo "${x:-fallback}"
-ok
-
-% x=
-% echo "${x:-fallback}"
-fallback
-
-% y=yvalue
-% echo "${x:-$y}"
-yvalue
-</code></pre>
-
-<h3>The <code>%x</code> prompt escape code</h3>
-
-<p>Next, we'll introduce prompt escape codes, a zsh-only feature. In zsh, <code>%x</code> will expand to the path of the file, but normally this is only when doing expansion for <a href="http://zsh.sourceforge.net/Doc/Release/Prompt-Expansion.html#Shell-state" rel="nofollow noreferrer">prompt strings</a>. To enable those codes in our substitution, we can add a <code>(%)</code> flag before the variable name:</p>
-
-<pre><code>% cat apath/test.sh
-fpath=%x
-echo "${(%)fpath}"
-
-% source apath/test.sh
-apath/test.sh
-
-% cd apath
-% source test.sh
-test.sh
-</code></pre>
-
-<h3>An unlikely match: the percent escape and the fallback</h3>
-
-<p>What we have so far works, but it would be tidier to avoid creating the extra <code>fpath</code> variable. Instead of putting <code>%x</code> in <code>fpath</code>, we can use <code>:-</code> and put <code>%x</code> in the fallback string:</p>
-
-<pre><code>% cat test.sh
-echo "${(%):-%x}"
-
-% source test.sh
-test.sh
-</code></pre>
-
-<p>Note that we normally would put a variable name between <code>(%)</code> and <code>:-</code>, but we left it blank. The variable with a blank name can't be declared or set, so the fallback is always triggered.</p>
-
-<h3>Finishing up: what about <code>print -P %x</code>?</h3>
-
-<p>Now we almost have the directory of our script. We could have used <code>print -P %x</code> to get the same file path with fewer hacks, but in our case, where we need to pass it as an argument to <code>dirname</code>, that would have required the overhead of a starting a new subshell:</p>
-
-<pre><code>% cat apath/test.sh
-dirname "$(print -P %x)"  # $(...) runs a command in a new process
-dirname "${(%):-%x}"
-
-% source apath/test.sh
-apath
-apath
-</code></pre>
-
-<p>It turns out that the hacky way is both more performant and succinct.</p>
-</tr></td><tr><td><p>I want to comment on the previous answer up there (<a href="https://stackoverflow.com/a/201915/5010054">https://stackoverflow.com/a/201915/5010054</a>) but don't have enough reputation to do that.</p>
-
-<p>Found a solution for this two years ago on apple's documentation site: <a href="https://developer.apple.com/library/archive/documentation/OpenSource/Conceptual/ShellScripting/AdvancedTechniques/AdvancedTechniques.html" rel="nofollow noreferrer">https://developer.apple.com/library/archive/documentation/OpenSource/Conceptual/ShellScripting/AdvancedTechniques/AdvancedTechniques.html</a> . And I stuck to this method afterwards. It cannot handle soft link but otherwise works pretty well for me. I'm posting it here for any who needs it and as a request for comment.</p>
-
-<pre><code>#!/bin/sh
-
-# Get an absolute path for the poem.txt file.
-POEM="$PWD/../poem.txt"
-
-# Get an absolute path for the script file.
-SCRIPT="$(which $0)"
-if [ "x$(echo $SCRIPT | grep '^\/')" = "x" ] ; then
-    SCRIPT="$PWD/$SCRIPT"
-fi
-</code></pre>
-
-<p>As shown by the code, after you get the absolute path of the script, then you can use dirname command to get the path of the directory.</p>
-</tr></td><tr><td><p>There is no 100% portable and reliable way to request a path to a current script directory. Especially between different backends like cygwin/mingw/msys/Linux and etc. This issue was not properly and completely resolved in the bash for ages.</p>
-
-<p>For example, this could not be resolved if you want to request the path after the <code>source</code> command to make nested inclusion of another bash script which is in turn use the same <code>source</code> command to include another bash script and so on.</p>
-
-<p>In case of <code>source</code> command i suggest to replace the <code>source</code> command to something like this:</p>
-
-<pre><code>function include()
-{
-  if [[ -n "$CURRENT_SCRIPT_DIR" ]]; then
-    local dir_path=... get directory from `CURRENT_SCRIPT_DIR/$1`, depends if $1 is absolute path or relative ...
-    local include_file_path=...
-  else
-    local dir_path=... request the directory from the "$1" argument using one of answered here methods...
-    local include_file_path=...
-  fi
-  ... push $CURRENT_SCRIPT_DIR in to stack ... 
-  export CURRENT_SCRIPT_DIR=... export current script directory using $dir_path ...
-  source "$include_file_path"
-  ... pop $CURRENT_SCRIPT_DIR from stack ...
-}
-</code></pre>
-
-<p>From now and on the use of <code>include(...)</code> is based on previous <code>CURRENT_SCRIPT_DIR</code> in your script.</p>
-
-<p>This only works when you can replace all <code>source</code> commands by <code>include</code> command. If you can't, then you have no choice. At least until developers of the bash interpreter make an explicit command to request the current running script directory path.</p>
-
-<p>My own closest implementation to this:
-<a href="https://sourceforge.net/p/tacklelib/tacklelib/175/tree/trunk/_scripts/bash_entry#l270" rel="nofollow noreferrer">https://sourceforge.net/p/tacklelib/tacklelib/175/tree/trunk/_scripts/bash_entry#l270</a></p>
-</tr></td><tr><td><p>The shortest and most elegant way to do this is:</p>
-
-<pre class="lang-sh prettyprint-override"><code>#!/bin/bash
-DIRECTORY=$(cd `dirname $0` &amp;&amp; pwd)
-echo $DIRECTORY
-</code></pre>
-
-<p>This would work on all platforms and is super clean.</p>
-
-<p>More details can be found in "<a href="https://www.electrictoolbox.com/bash-script-directory/" rel="noreferrer">Which directory is that bash script in?</a>". </p>
-</tr></td><tr><td><h3>The following will return the current directory of the script</h3>
-
-<ul>
-<li>works if it's sourced, or not sourced</li>
-<li>works if run in the current directory, or some other directory.</li>
-<li>works if relative directories are used.</li>
-<li>works with bash, not sure of other shells.</li>
-</ul>
-
-<pre><code>/tmp/a/b/c $ . ./test.sh
-/tmp/a/b/c
-
-/tmp/a/b/c $ . /tmp/a/b/c/test.sh
-/tmp/a/b/c
-
-/tmp/a/b/c $ ./test.sh
-/tmp/a/b/c
-
-/tmp/a/b/c $ /tmp/a/b/c/test.sh
-/tmp/a/b/c
-
-/tmp/a/b/c $ cd
-
-~ $ . /tmp/a/b/c/test.sh
-/tmp/a/b/c
-
-~ $ . ../../tmp/a/b/c/test.sh
-/tmp/a/b/c
-
-~ $ /tmp/a/b/c/test.sh
-/tmp/a/b/c
-
-~ $ ../../tmp/a/b/c/test.sh
-/tmp/a/b/c
-</code></pre>
-
-<h3>test.sh</h3>
-
-<pre><code>#!/usr/bin/env bash
-
-# snagged from: https://stackoverflow.com/a/51264222/26510
-function toAbsPath {
-    local target
-    target="$1"
-
-    if [ "$target" == "." ]; then
-        echo "$(pwd)"
-    elif [ "$target" == ".." ]; then
-        echo "$(dirname "$(pwd)")"
-    else
-        echo "$(cd "$(dirname "$1")"; pwd)/$(basename "$1")"
-    fi
-}
-
-function getScriptDir(){
-  local SOURCED
-  local RESULT
-  (return 0 2&gt;/dev/null) &amp;&amp; SOURCED=1 || SOURCED=0
-
-  if [ "$SOURCED" == "1" ]
-  then
-    RESULT=$(dirname "$1")
-  else
-    RESULT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &gt;/dev/null 2&gt;&amp;1 &amp;&amp; pwd )"
-  fi
-  toAbsPath "$RESULT"
-}
-
-SCRIPT_DIR=$(getScriptDir "$0")
-echo "$SCRIPT_DIR"
-</code></pre>
-</tr></td><tr><td><p>Python was mentioned a few times. Here is the JavaScript (i.e. <code>node</code>) alternative:</p>
-
-<pre class="lang-sh prettyprint-override"><code>baseDirRelative=$(dirname "$0")
-baseDir=$(node -e "console.log(require('path').resolve('$baseDirRelative'))") # get absolute path using node
-
-echo $baseDir
-</code></pre>
-</tr></td><tr><td><p>disclaimer - the top response does not work in all cases... that's why posting this alternate answer.</p>
-
-<p>as i had problems with the BASH_SOURCE with included 'cd' approach on some very fresh and also on less fresh installed Ubuntu Xenial (16.04) systems when invoking the shell script by means of "sh my_script.sh" i tried out something different that as of now seems to run quite smoothly for my purposes. The approach is a bit more compact in the script and is further much lesser cryptic feeling.</p>
-
-<p>this alternate approach uses the external applications 'realpath' and ''dirname from the coreutils package. (okay, not anyone likes the overhead of invoking secondary processe - but when seeing the multi-line scripting for resolving the true object it wont be that bad either having it solve in a single binary usage.)</p>
-
-<p>so lets see one example of those alternate solution for the described task of querying the true absolute path to the a certain file:</p>
-
-<pre><code>SCRIPT=`realpath -s $0`
-SCRIPTPATH=`dirname $SCRIPT`
-</code></pre>
-
-<p>Or when having the chance of using paths with spaces (or maybe other special chars):</p>
-
-<pre><code>SCRIPT=`realpath -s "$0"`
-SCRIPTPATH=`dirname "$SCRIPT"`
-</code></pre>
-
-<p>indeed, if you dont need the value of the SCRIPT variable then you might be able to merge this two-liner into even a single line. but why really shall you spend the effort for this?</p>
-</tr></td><tr><td><p>For many cases, all you need to acquire is the full path to the script you just called. This can be easily accomplished as follows. Note that <code>realpath</code> is part of <strong>GNU coreutils</strong>. If you don't have it already installed (it comes default on Ubuntu), you can install it with <code>sudo apt update &amp;&amp; sudo apt install coreutils</code>.</p>
-
-<p><strong>realpath_test.sh</strong>:</p>
-
-<pre><code>#!/bin/bash
-
-PATH_TO_SCRIPT="$(realpath $0)"
-echo "PATH_TO_SCRIPT = \"$PATH_TO_SCRIPT\""
-</code></pre>
-
-<p>Example output:</p>
 
 <blockquote>
-  <p>$ ./realpath_test.sh<br>
-  PATH_TO_SCRIPT = "/home/gabriel/dev/linux_scripts/practice/realpath/realpath_test.sh"</p>
+  <p><em>Ternary operator in R programming</em></p>
 </blockquote>
 
-<p>Note that <code>realpath</code> also successfully walks down symbolic links to determine and point to their targets rather than pointing to the symbolic link.</p>
-
-<h2>References:</h2>
-
-<ol>
-<li><a href="https://stackoverflow.com/questions/4175264/how-to-retrieve-absolute-path-given-relative/14892459#14892459">How to retrieve absolute path given relative</a></li>
-</ol>
-</tr></td><tr><td><p>Keep it simple.</p>
-
-<pre><code>#!/usr/bin/env bash
-sourceDir=`pwd`
-echo $sourceDir
-</code></pre>
-</tr></td><tr><td><p>I think the simplest answer is a parameter expansion of the original variable:</p>
-
-<pre><code>#!/usr/bin/env bash                                                                
-
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &gt;/dev/null 2&gt;&amp;1 &amp;&amp; pwd )"            
-echo "opt1; original answer: $DIR"                                                 
-echo ''                                                                            
-
-echo "opt2; simple answer  : ${BASH_SOURCE[0]%/*}"                              
+<pre><code>a &lt;- if (TRUE) 1 else 0
+# 1
+b &lt;- if (FALSE) 1 else 0
+# 0
 </code></pre>
 
-<p>Should produce output like: </p>
+<blockquote>
+  <p><em>Ternary operator in Python</em></p>
+</blockquote>
 
-<pre><code>$ /var/tmp/test.sh
-opt1; original answer: /var/tmp
+<pre><code>a = 1 if True else 0
+# 1
+b = 1 if False else 0
+# 0
+</code></pre>
+</tr></td><tr><td><p>More a tip than an answer (don't need to repeat the obvious for the hundreth time), but I sometimes use it as a oneliner shortcut in such constructs:</p>
 
-opt2; simple answer  : /var/tmp
+<pre><code>if conditionX:
+    print('yes')
+else:
+    print('nah')
 </code></pre>
 
-<p>The variable/parameter expansion <code>${BASH_SOURCE[0]%/*}"</code> seems much easier to maintain.</p>
+<p>, becomes:</p>
+
+<pre><code>print('yes') if conditionX else print('nah')
+</code></pre>
+
+<p>Some (many :) may frown upon it as unpythonic (even, ruby-ish :), but I personally find it more natural - i.e. how you'd express it normally, plus a bit more visually appealing in large blocks of code.</p>
+</tr></td><tr><td><p>An operator for a conditional expression in Python was added in 2006 as part of <a href="https://www.python.org/dev/peps/pep-0308/" rel="noreferrer">Python Enhancement Proposal 308</a>. Its form differ from common <code>?:</code> operator and it's:</p>
+
+<pre><code>&lt;expression1&gt; if &lt;condition&gt; else &lt;expression2&gt;
+</code></pre>
+
+<p>which is equivalent to:</p>
+
+<pre><code>if &lt;condition&gt;: &lt;expression1&gt; else: &lt;expression2&gt;
+</code></pre>
+
+<p>Here is an example:</p>
+
+<pre><code>result = x if a &gt; b else y
+</code></pre>
+
+<p>Another syntax which can be used (compatible with versions before 2.5):</p>
+
+<pre><code>result = (lambda:y, lambda:x)[a &gt; b]()
+</code></pre>
+
+<p>where operands are <a href="https://en.wikipedia.org/wiki/Lazy_evaluation" rel="noreferrer">lazily evaluated</a>.</p>
+
+<p>Another way is by indexing a tuple (which isn't consistent with the conditional operator of most other languages):</p>
+
+<pre><code>result = (y, x)[a &gt; b]
+</code></pre>
+
+<p>or explicitly constructed dictionary:</p>
+
+<pre><code>result = {True: x, False: y}[a &gt; b]
+</code></pre>
+
+<p>Another (less reliable), but simpler method is to use <code>and</code> and <code>or</code> operators:</p>
+
+<pre><code>result = (a &gt; b) and x or y
+</code></pre>
+
+<p>however this won't work if <code>x</code> would be <code>False</code>.</p>
+
+<p>A possible workaround is to make <code>x</code> and <code>y</code> lists or tuples as in the following:</p>
+
+<pre><code>result = ((a &gt; b) and [x] or [y])[0]
+</code></pre>
+
+<p>or:</p>
+
+<pre><code>result = ((a &gt; b) and (x,) or (y,))[0]
+</code></pre>
+
+<p>If you're working with dictionaries, instead of using a ternary conditional, you can take advantage of <a href="https://docs.python.org/3/library/stdtypes.html#dict.get" rel="noreferrer"><code>get(key, default)</code></a>, for example:</p>
+
+<pre><code>shell = os.environ.get('SHELL', "/bin/sh")
+</code></pre>
+
+<p><sup>Source: <a href="https://en.wikipedia.org/wiki/%3F:#Python" rel="noreferrer">?: in Python at Wikipedia</a></sup></p>
+</tr></td><tr><td><p>you can do this :-</p>
+<h3><strong><code>[condition] and [expression_1] or [expression_2] ;</code></strong></h3>
+<p>Example:-</p>
+<h3><code>print(number%2 and &quot;odd&quot; or &quot;even&quot;)</code></h3>
+<p>This would print &quot;odd&quot; if the number is odd or &quot;even&quot; if the number is even.</p>
+<hr />
+<h3><strong>The result :-</strong>  If condition is true exp_1 is executed else exp_2 is executed.</h3>
+<p><strong>Note :-</strong> 0 , None , False , emptylist , emptyString evaluates as False.
+And any data other than 0 evaluates to True.</p>
+<h2>Here's how it works:</h2>
+<p>if the condition [condition] becomes &quot;True&quot; then , expression_1 will be evaluated but not expression_2 .
+If we &quot;and&quot; something with 0 (zero) , the result will always to be fasle .So in the below statement ,</p>
+<pre><code>0 and exp
+</code></pre>
+<p>The expression exp won't be evaluated at all since &quot;and&quot; with 0 will always evaluate to zero and there is no need to evaluate the expression . This is how the compiler itself works , in all languages.</p>
+<p>In</p>
+<pre><code>1 or exp
+</code></pre>
+<p>the expression exp won't be evaluated at all since &quot;or&quot; with 1 will always be 1. So it won't bother to evaluate the expression exp since the result will be 1 anyway . (compiler optimization methods).</p>
+<p>But in case of</p>
+<pre><code>True and exp1 or exp2
+</code></pre>
+<p>The second expression exp2 won't be evaluated since <code>True and exp1</code> would be True when exp1 isn't false .</p>
+<p>Similarly in</p>
+<pre><code>False and exp1 or exp2
+</code></pre>
+<p>The expression exp1 won't be evaluated since False is equivalent to writing 0 and doing &quot;and&quot; with 0 would be 0 itself but after exp1 since &quot;or&quot; is used, it will evaluate the expression exp2 after &quot;or&quot; .</p>
+<hr />
+<p><strong>Note:-</strong> This kind of branching using &quot;or&quot; and &quot;and&quot; can only be used when the expression_1 doesn't have a Truth value of False (or 0 or None or emptylist [ ] or emptystring ' '.) since if expression_1 becomes False , then the expression_2 will be evaluated because of the presence &quot;or&quot; between exp_1 and exp_2.</p>
+<p><strong>In case you still want to make it work for all the cases regardless of what exp_1 and exp_2 truth values are, do this :-</strong></p>
+<h3><code>[condition] and ([expression_1] or 1) or [expression_2] ;</code></h3>
+</tr></td><tr><td><p>if variable is defined and you want to check if it has value you can just <code>a or b</code></p>
+
+<pre><code>def test(myvar=None):
+    # shorter than: print myvar if myvar else "no Input"
+    print myvar or "no Input"
+
+test()
+test([])
+test(False)
+test('hello')
+test(['Hello'])
+test(True)
+</code></pre>
+
+<p>will output</p>
+
+<pre><code>no Input
+no Input
+no Input
+hello
+['Hello']
+True
+</code></pre>
+</tr></td><tr><td><p>Ternary conditional operator simply allows testing a condition in a single line replacing the multiline if-else making the code compact.</p>
+
+<h3>Syntax :</h3>
+
+<blockquote>
+  <p>[on_true] if [expression] else [on_false] </p>
+</blockquote>
+
+<h3>1- Simple Method to use ternary operator:</h3>
+
+<pre><code># Program to demonstrate conditional operator
+a, b = 10, 20
+# Copy value of a in min if a &lt; b else copy b
+min = a if a &lt; b else b
+print(min)  # Output: 10
+</code></pre>
+
+<h3>2- Direct Method of using tuples, Dictionary, and lambda:</h3>
+
+<pre><code># Python program to demonstrate ternary operator
+a, b = 10, 20
+# Use tuple for selecting an item
+print( (b, a) [a &lt; b] )
+# Use Dictionary for selecting an item
+print({True: a, False: b} [a &lt; b])
+# lamda is more efficient than above two methods
+# because in lambda  we are assure that
+# only one expression will be evaluated unlike in
+# tuple and Dictionary
+print((lambda: b, lambda: a)[a &lt; b]()) # in output you should see three 10
+</code></pre>
+
+<h3>3- Ternary operator can be written as nested if-else:</h3>
+
+<pre><code># Python program to demonstrate nested ternary operator
+a, b = 10, 20
+print ("Both a and b are equal" if a == b else "a is greater than b"
+        if a &gt; b else "b is greater than a")
+</code></pre>
+
+<p>Above approach can be written as:</p>
+
+<pre><code># Python program to demonstrate nested ternary operator
+a, b = 10, 20
+if a != b:
+    if a &gt; b:
+        print("a is greater than b")
+    else:
+        print("b is greater than a")
+else:
+    print("Both a and b are equal") 
+# Output: b is greater than a
+</code></pre>
+</tr></td><tr><td><p>Many programming languages derived from <code>C</code> usually have the following syntax of ternary conditional operator:</p>
+
+<pre><code>&lt;condition&gt; ? &lt;expression1&gt; : &lt;expression2&gt;
+</code></pre>
+
+<blockquote>
+  <p>At first, the <code>Python</code> <strong>B</strong>enevolent <strong>D</strong>ictator <strong>F</strong>or <strong>L</strong>ife (I mean Guido van Rossum, of course) rejected it (as non-Pythonic style), since it's quite hard to understand for people not used to <code>C</code> language. Also, the colon sign <strong><code>:</code></strong> already has many uses in <code>Python</code>. After <strong>PEP 308</strong> was approved, <code>Python</code> finally received its own shortcut conditional expression (what we use now):</p>
+</blockquote>
+
+<pre><code>&lt;expression1&gt; if &lt;condition&gt; else &lt;expression2&gt;
+</code></pre>
+
+<p>So, firstly it evaluates the condition. If it returns <code>True</code>, <strong>expression1</strong> will be evaluated to give the result, otherwise <strong>expression2</strong> will be evaluated. Due to <strong><em>Lazy Evaluation</em></strong> mechanics – only one expression will be executed.</p>
+
+<p>Here are some examples (conditions will be evaluated from left to right):</p>
+
+<pre><code>pressure = 10
+print('High' if pressure &lt; 20 else 'Critical')
+
+# Result is 'High'
+</code></pre>
+
+<p>Ternary operators can be chained in series:     </p>
+
+<pre><code>pressure = 5
+print('Normal' if pressure &lt; 10 else 'High' if pressure &lt; 20 else 'Critical')
+
+# Result is 'Normal'
+</code></pre>
+
+<p>The following one is the same as previous one:</p>
+
+<pre><code>pressure = 5
+
+if pressure &lt; 20:
+    if pressure &lt; 10:
+        print('Normal')
+    else:
+        print('High')
+else:
+    print('Critical')
+
+# Result is 'Normal'
+</code></pre>
+
+<p>Hope this helps.</p>
+</tr></td><tr><td><p>One of the alternatives to Python's <a href="https://mail.python.org/pipermail/python-dev/2005-September/056846.html" rel="noreferrer">conditional expression</a></p>
+
+<pre><code>"yes" if boolean else "no"
+</code></pre>
+
+<p>is the following:</p>
+
+<pre><code>{True:"yes", False:"no"}[boolean]
+</code></pre>
+
+<p>which has the following nice extension:</p>
+
+<pre><code>{True:"yes", False:"no", None:"maybe"}[boolean_or_none]
+</code></pre>
+
+<p>The shortest alternative remains:</p>
+
+<pre><code>("no", "yes")[boolean]
+</code></pre>
+
+<p>but there is no alternative to</p>
+
+<pre><code>yes() if boolean else no()
+</code></pre>
+
+<p>if you want to avoid the evaluation of <code>yes()</code> <em>and</em> <code>no()</code>, because in</p>
+
+<pre><code>(no(), yes())[boolean]  # bad
+</code></pre>
+
+<p>both <code>no()</code> and <code>yes()</code> are evaluated.</p>
+</tr></td><tr><td><p>YES, python have a ternary operator, here is the syntax and an example code to demonstrate the same :)</p>
+
+<pre><code>#[On true] if [expression] else[On false]
+# if the expression evaluates to true then it will pass On true otherwise On false
+
+
+a= input("Enter the First Number ")
+b= input("Enter the Second Number ")
+
+print("A is Bigger") if a&gt;b else print("B is Bigger")
+</code></pre>
+</tr></td><tr><td><pre><code>a if condition else b
+</code></pre>
+
+<p>Just memorize this pyramid if you have trouble remembering:</p>
+
+<pre><code>     condition
+  if           else
+a                   b 
+</code></pre>
+</tr></td><tr><td><pre><code>is_spacial=True if gender = "Female" else (True if age &gt;= 65 else False)
+</code></pre>
+
+<p>**</p>
+
+<blockquote>
+  <p>it can be nested as your need. best of luck</p>
+</blockquote>
+
+<p>**</p>
+</tr></td><tr><td><p>As already answered, yes there is a ternary operator in python:</p>
+
+<pre><code>&lt;expression 1&gt; if &lt;condition&gt; else &lt;expression 2&gt;
+</code></pre>
+
+<p>Additional information:</p>
+
+<p>If <code>&lt;expression 1&gt;</code> is the condition you can use <a href="https://en.wikipedia.org/wiki/Short-circuit_evaluation" rel="noreferrer">Short-cirquit evaluation</a>:</p>
+
+<pre class="lang-py prettyprint-override"><code>a = True
+b = False
+
+# Instead of this:
+x = a if a else b
+
+# You could use Short-cirquit evaluation:
+x = a or b
+</code></pre>
+
+<p>PS: Of course, a Short-cirquit evaluation is not a ternary operator but often the ternary is used in cases where the short circuit would be enough.</p>
+</tr></td><tr><td><p><em>A neat way to chain multiple operators:</em></p>
+
+<pre><code>f = lambda x,y: 'greater' if x &gt; y else 'less' if y &gt; x else 'equal'
+
+array = [(0,0),(0,1),(1,0),(1,1)]
+
+for a in array:
+  x, y = a[0], a[1]
+  print(f(x,y))
+
+# Output is:
+#   equal,
+#   less,
+#   greater,
+#   equal
+
+</code></pre>
+</tr></td><tr><td><p>Python has a ternary form for assignments; however there may be even a shorter form that people should be aware of.</p>
+
+<p>It's very common to need to assign to a variable one value or another depending on a condition.</p>
+
+<pre><code>&gt;&gt;&gt; li1 = None
+&gt;&gt;&gt; li2 = [1, 2, 3]
+&gt;&gt;&gt; 
+&gt;&gt;&gt; if li1:
+...     a = li1
+... else:
+...     a = li2
+...     
+&gt;&gt;&gt; a
+[1, 2, 3]
+</code></pre>
+
+<p>^ This is the long form for doing such assignments.</p>
+
+<p>Below is the ternary form. But this isn't most succinct way - see last example.</p>
+
+<pre><code>&gt;&gt;&gt; a = li1 if li1 else li2
+&gt;&gt;&gt; 
+&gt;&gt;&gt; a
+[1, 2, 3]
+&gt;&gt;&gt; 
+</code></pre>
+
+<p>With Python, you can simply use <code>or</code> for alternative assignments.</p>
+
+<pre><code>&gt;&gt;&gt; a = li1 or li2
+&gt;&gt;&gt; 
+&gt;&gt;&gt; a
+[1, 2, 3]
+&gt;&gt;&gt; 
+</code></pre>
+
+<p>The above works since <code>li1</code> is <code>None</code> and the interp treats that as False in logic expressions. The interp then moves on and evaluates the second expression, which is not <code>None</code> and it's not an empty list - so it gets assigned to a.</p>
+
+<p>This also works with empty lists. For instance, if you want to assign <code>a</code> whichever list has items.</p>
+
+<pre><code>&gt;&gt;&gt; li1 = []
+&gt;&gt;&gt; li2 = [1, 2, 3]
+&gt;&gt;&gt; 
+&gt;&gt;&gt; a = li1 or li2
+&gt;&gt;&gt; 
+&gt;&gt;&gt; a
+[1, 2, 3]
+&gt;&gt;&gt; 
+</code></pre>
+
+<p>Knowing this, you can simply such assignments whenever you encounter them. This also works with strings and other iterables. You could assign <code>a</code> whichever string isn't empty.</p>
+
+<pre><code>&gt;&gt;&gt; s1 = ''
+&gt;&gt;&gt; s2 = 'hello world'
+&gt;&gt;&gt; 
+&gt;&gt;&gt; a = s1 or s2
+&gt;&gt;&gt; 
+&gt;&gt;&gt; a
+'hello world'
+&gt;&gt;&gt; 
+</code></pre>
+
+<p>I always liked the C ternary syntax, but Python takes it a step further!</p>
+
+<p>I understand that some may say this isn't a good stylistic choice because it relies on mechanics that aren't immediately apparent to all developers. I personally disagree with that viewpoint. Python is a syntax rich language with lots of idiomatic tricks that aren't immediately apparent to the dabler. But the more you learn and understand the mechanics of the underlying system, the more you appreciate it.</p>
+</tr></td><tr><td><p>I find cumbersome the default python syntax <code>val = a if cond else b</code>, so sometimes I do this:</p>
+
+<pre><code>iif = lambda (cond, a, b): a if cond else b
+# so I can then use it like:
+val = iif(cond, a, b)
+</code></pre>
+
+<p>Of course, it has the downside of always evaluating both sides (a and b), but the syntax it's way clearer to me</p>
+</tr></td><tr><td><p>Other answers correctly talk about the Python ternary operator. I would like to complement by mentioning a scenario for which the ternary operator is often used but for which there is a better idiom. This is the scenario of using a default value.</p>
+
+<p>Suppose we want to use <code>option_value</code> with a default value if it is not set:</p>
+
+<pre><code>run_algorithm(option_value if option_value is not None else 10)
+</code></pre>
+
+<p>or simply</p>
+
+<pre><code>run_algorithm(option_value if option_value else 10)
+</code></pre>
+
+<p>However, an ever better solution is simply to write</p>
+
+<pre><code>run_algorithm(option_value or 10)
+</code></pre>
 </tr></td>

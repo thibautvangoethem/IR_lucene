@@ -37,9 +37,9 @@
 			<version>${lucene.version}</version>
 		</dependency>
 		<dependency>
-		    <groupId>org.apache.lucene</groupId>
-		    <artifactId>lucene-grouping</artifactId>
-		    <version>${lucene.version}</version>
+			<groupId>org.apache.lucene</groupId>
+			<artifactId>lucene-grouping</artifactId>
+			<version>${lucene.version}</version>
 		</dependency>
 		<!--JAXB dependencies -->
 		<dependency>
@@ -58,12 +58,17 @@
 			<version>${jaxb.api.version}</version>
 		</dependency>
 		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.11</version>
+		</dependency>
+		<dependency>
 			<groupId>com.sun.xml.bind</groupId>
 			<artifactId>jaxb-impl</artifactId>
 			<version>${jaxb.api.version}</version>
 		</dependency>
 
-		<!--jdbc driver for postgres  -->
+		<!--jdbc driver for postgres -->
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>

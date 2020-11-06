@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
+import org.apache.lucene.analysis.en.PorterStemFilter;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
@@ -32,7 +34,6 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
 
-
 public class QuerySearcher {
 	public static void main(String[] args) throws IOException, ParseException {
 		long startTime = new Date().getTime();
@@ -40,11 +41,10 @@ public class QuerySearcher {
 		
 		EnglishAnalyzer analyzer = new EnglishAnalyzer();
 		Directory index = FSDirectory.open(Paths.get("./index"));
-
-		IndexWriterConfig config = new IndexWriterConfig(analyzer);
 		
-		String input="c++";
-		String query=escapeProhibitedLuceneCharacters(input);	
+		String input="What is the --> operator in c++";
+		String query=SpecialCharConverter.encode(input);
+//		String query=escapeProhibitedLuceneCharacters(input);
 		System.out.println(query);
 		Query qTitle = new QueryParser("title", analyzer).parse(query);
 		Query qBody = new QueryParser("body", analyzer).parse(query);
@@ -59,8 +59,9 @@ public class QuerySearcher {
 		queryBuilder.add(qBody, Occur.SHOULD);
 		queryBuilder.add(qTags, Occur.SHOULD);
 		BooleanQuery q = queryBuilder.build();
-		DoubleValuesSource valueSource= DoubleValuesSource.fromIntField("score");
-		FunctionScoreQuery scoreQuery=new FunctionScoreQuery(q, valueSource);
+		DoubleValuesSource valueSource= new ScoreValueSource("score");
+		FunctionScoreQuery scoreQuery=FunctionScoreQuery.boostByValue(q, valueSource);
+		
 		
 		GroupingSearch gSearch=new GroupingSearch("id");
 //		gSearch.setAllGroups(true);

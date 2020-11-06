@@ -18,7 +18,7 @@ public class ResultsToHtmlPage {
 			index.write("<h3>Found " + results.size() + " hit(s) for query: " + originalquery + "</h3>");
 			int docIndex = 1;
 			for (Document doc : results.keySet()) {
-				String title = doc.get("title");
+				String title = doc.get("plainTitle");
 				String body = doc.get("body");
 				String filename = "answer" + Integer.toString(docIndex) + ".html";
 				FileWriter answerWriter = createFile("results/" + filename);

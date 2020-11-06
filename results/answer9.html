@@ -6,325 +6,516 @@ td, th {
   padding: 8px;
 }
 </style>
-</head><h1>Why does HTML think “chucknorris” is a color?</h1><p>How come certain random strings produce colors when entered as background colors in HTML? For example:</p>
+</head><h1>What is The Rule of Three?</h1><ul>
+<li>What does <em>copying an object</em> mean?</li>
+<li>What are the <em>copy constructor</em> and the <em>copy assignment operator</em>?</li>
+<li>When do I need to declare them myself?</li>
+<li>How can I prevent my objects from being copied?</li>
+</ul>
+<table> <tr><th>answers</th></tr><tr><td><h1>Introduction</h1>
 
-<p><div class="snippet" data-lang="js" data-hide="false" data-console="false" data-babel="false">
-<div class="snippet-code">
-<pre class="snippet-code-html lang-html prettyprint-override"><code>&lt;body bgcolor="chucknorris"&gt; test &lt;/body&gt;</code></pre>
-</div>
-</div>
-</p>
+<p>C++ treats variables of user-defined types with <em>value semantics</em>.
+This means that objects are implicitly copied in various contexts,
+and we should understand what "copying an object" actually means.</p>
 
-<p>...produces a document with a <strong>red background</strong> across all browsers and platforms.</p>
+<p>Let us consider a simple example:</p>
 
-<p>Interestingly, while <code>chucknorri</code> produces a red background as well, <code>chucknorr</code> produces a yellow background.</p>
-
-<p>What's going on here?</p>
-<table> <tr><th>answers</th></tr><tr><td><p>It's a holdover from the Netscape days:</p>
-
-<blockquote>
-  <p>Missing digits are treated as 0[...]. An incorrect digit is simply interpreted as 0. For example the values #F0F0F0, F0F0F0, F0F0F, #FxFxFx and FxFxFx are all the same.</p>
-</blockquote>
-
-<p>It is from the blog post <em><a href="http://scrappy-do.blogspot.com/2004/08/little-rant-about-microsoft-internet.html">A little rant about Microsoft Internet Explorer's color parsing</a></em> which covers it in great detail, including varying lengths of color values, etc.</p>
-
-<p>If we apply the rules in turn from the blog post, we get the following:</p>
-
-<ol>
-<li><p>Replace all nonvalid hexadecimal characters with 0's</p>
-
-<pre><code>chucknorris becomes c00c0000000
-</code></pre></li>
-<li><p>Pad out to the next total number of characters divisible by 3 (11 -> 12)</p>
-
-<pre><code>c00c 0000 0000
-</code></pre></li>
-<li><p>Split into three equal groups, with each component representing the corresponding colour component of an RGB colour:</p>
-
-<pre><code>RGB (c00c, 0000, 0000)
-</code></pre></li>
-<li><p>Truncate each of the arguments from the right down to two characters</p></li>
-</ol>
-
-<p>Which gives the following result:</p>
-
-<pre><code>RGB (c0, 00, 00) = #C00000 or RGB(192, 0, 0)
-</code></pre>
-
-<p>Here's an example demonstrating the <code>bgcolor</code> attribute in action, to produce this "amazing" colour swatch:</p>
-
-<p><div class="snippet" data-lang="js" data-hide="false">
-<div class="snippet-code">
-<pre class="snippet-code-html lang-html prettyprint-override"><code>&lt;table&gt;
-  &lt;tr&gt;
-    &lt;td bgcolor="chucknorris" cellpadding="8" width="100" align="center"&gt;chuck norris&lt;/td&gt;
-    &lt;td bgcolor="mrt"         cellpadding="8" width="100" align="center" style="color:#ffffff"&gt;Mr T&lt;/td&gt;
-    &lt;td bgcolor="ninjaturtle" cellpadding="8" width="100" align="center" style="color:#ffffff"&gt;ninjaturtle&lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-    &lt;td bgcolor="sick"  cellpadding="8" width="100" align="center"&gt;sick&lt;/td&gt;
-    &lt;td bgcolor="crap"  cellpadding="8" width="100" align="center"&gt;crap&lt;/td&gt;
-    &lt;td bgcolor="grass" cellpadding="8" width="100" align="center"&gt;grass&lt;/td&gt;
-  &lt;/tr&gt;
-&lt;/table&gt;</code></pre>
-</div>
-</div>
-</p>
-
-<p>This also answers the other part of the question; why does <code>bgcolor="chucknorr"</code> produce a yellow colour? Well, if we apply the rules, the string is:</p>
-
-<pre><code>c00c00000 =&gt; c00 c00 000 =&gt; c0 c0 00 [RGB(192, 192, 0)]
-</code></pre>
-
-<p>Which gives a light yellow gold colour. As the string starts off as 9 characters, we keep the second C this time around hence it ends up in the final colour value.</p>
-
-<p>I originally encountered this when someone pointed out you could do <code>color="crap"</code> and, well, it comes out brown.</p>
-</tr></td><tr><td><p>Most browsers will simply ignore any NON-hex values in your color string, substituting non-hex digits with zeros.</p>
-
-<p><code>ChuCknorris</code> translates to <code>c00c0000000</code>.  At this point, the browser will divide the string into three equal sections, indicating <em>Red</em>, <em>Green</em> and <em>Blue</em> values: <code>c00c 0000 0000</code>.  Extra bits in each section will be ignored, which makes the final result <code>#c00000</code> which is a reddish color.</p>
-
-<p>Note, this does <em>not</em> apply to CSS color parsing, which follow the CSS standard.<div class="snippet" data-lang="js" data-hide="false">
-<div class="snippet-code">
-<pre class="snippet-code-html lang-html prettyprint-override"><code>&lt;p&gt;&lt;font color='chucknorris'&gt;Redish&lt;/font&gt;&lt;/p&gt;
-&lt;p&gt;&lt;font color='#c00000'&gt;Same as above&lt;/font&gt;&lt;/p&gt;
-&lt;p&gt;&lt;span style="color: chucknorris"&gt;Black&lt;/span&gt;&lt;/p&gt;</code></pre>
-</div>
-</div>
-</p>
-</tr></td><tr><td><p>The WHATWG HTML spec has the exact algorithm for parsing a legacy color value:
-<a href="https://html.spec.whatwg.org/multipage/infrastructure.html#rules-for-parsing-a-legacy-colour-value" rel="noreferrer">https://html.spec.whatwg.org/multipage/infrastructure.html#rules-for-parsing-a-legacy-colour-value</a></p>
-
-<p>The code Netscape Classic used for parsing color strings is open source:
-<a href="https://dxr.mozilla.org/classic/source/lib/layout/layimage.c#155" rel="noreferrer">https://dxr.mozilla.org/classic/source/lib/layout/layimage.c#155</a></p>
-
-<p>For example, notice that each character is parsed as a hex digit and then is shifted into a 32-bit integer <strong>without checking for overflow</strong>. Only eight hex digits fit into a 32-bit integer, which is why only the last 8 characters are considered. After parsing the hex digits into 32-bit integers, they are then truncated into 8-bit integers by dividing them by 16 until they fit into 8-bit, which is why leading zeros are ignored.</p>
-
-<p>Update: this code does not exactly match what is defined in the spec, but the only difference there is a few lines of code. I think it is these lines that was added (in Netscape 4):</p>
-
-<pre><code>if (bytes_per_val &gt; 4)
+<pre><code>class person
 {
-      bytes_per_val = 4;
+    std::string name;
+    int age;
+
+public:
+
+    person(const std::string&amp; name, int age) : name(name), age(age)
+    {
+    }
+};
+
+int main()
+{
+    person a("Bjarne Stroustrup", 60);
+    person b(a);   // What happens here?
+    b = a;         // And here?
 }
 </code></pre>
-</tr></td><tr><td><p>I'm sorry to disagree, but according to the rules for parsing a legacy color value posted by <a href="https://stackoverflow.com/a/12630675/282110">@Yuhong Bao</a>, <code>chucknorris</code> DOES NOT equate to <code>#CC0000</code>, but rather to <code>#C00000</code>, a very similar but slightly different hue of red. I used the <a href="https://addons.mozilla.org/en-us/firefox/addon/colorzilla/" rel="noreferrer">Firefox ColorZilla add-on</a> to verify this.</p>
 
-<p>The rules state:  </p>
+<p>(If you are puzzled by the <code>name(name), age(age)</code> part,
+this is called a <a href="https://stackoverflow.com/questions/1272680/">member initializer list</a>.)</p>
 
-<ul>
-<li>make the string a length that is a multiple of 3 by adding 0s: <code>chucknorris0</code></li>
-<li>separate the string into 3 equal length strings: <code>chuc knor ris0</code></li>
-<li>truncate each string to 2 characters: <code>ch kn ri</code></li>
-<li>keep the hex values, and add 0's where necessary: <code>C0 00 00</code></li>
-</ul>
+<h1>Special member functions</h1>
 
-<p>I was able to use these rules to correctly interpret the following strings:</p>
+<p>What does it mean to copy a <code>person</code> object?
+The <code>main</code> function shows two distinct copying scenarios.
+The initialization <code>person b(a);</code> is performed by the <em>copy constructor</em>.
+Its job is to construct a fresh object based on the state of an existing object.
+The assignment <code>b = a</code> is performed by the <em>copy assignment operator</em>.
+Its job is generally a little more complicated,
+because the target object is already in some valid state that needs to be dealt with.</p>
 
-<ul>
-<li><code>LuckyCharms</code></li>
-<li><code>Luck</code></li>
-<li><code>LuckBeALady</code></li>
-<li><code>LuckBeALadyTonight</code></li>
-<li><code>GangnamStyle</code> </li>
-</ul>
-
-<hr>
-
-<p>UPDATE: <em>The original answerers who said the color was <code>#CC0000</code> have since edited their answers to include the correction.</em></p>
-</tr></td><tr><td><p>The browser is trying to convert <code>chucknorris</code> into hex colour code, because it's not a valid value. </p>
-
-<ol>
-<li>In <code>chucknorris</code>, everything except <strong><code>c</code></strong> is not a valid hex value.</li>
-<li>So it gets converted to <strong><code>c00c00000000</code></strong>. </li>
-<li>Which becomes <strong>#c00000</strong>, a shade of red.</li>
-</ol>
-
-<p>This seems to be an issue primarily with <strong>Internet&nbsp;Explorer</strong> and <strong>Opera</strong> (12) as both Chrome (31) and Firefox (26) just ignore this.</p>
-
-<p><em>P.S. The numbers in brackets are the browser versions I tested on.</em></p>
-
-<p>.</p>
-
-<p>On a lighter note</p>
+<p>Since we declared neither the copy constructor nor the assignment operator (nor the destructor) ourselves,
+these are implicitly defined for us. Quote from the standard:</p>
 
 <blockquote>
-  <p>Chuck Norris doesn't conform to web standards. Web standards conform
-  to him. #BADA55</p>
+  <p>The [...] copy constructor and copy assignment operator, [...] and destructor are special member functions.
+  [ <em>Note</em>: <strong>The implementation will implicitly declare these member functions
+  for some class types when the program does not explicitly declare them.</strong>
+  The implementation will implicitly define them if they are used. [...] <em>end note</em> ]
+  [n3126.pdf section 12 §1]</p>
 </blockquote>
-</tr></td><tr><td><p><strong>Answer:</strong> </p>
 
-<ul>
-<li>The browser will try to convert <strong>chucknorris</strong> into a hexadecimal value. </li>
-<li>Since <code>c</code> is the only valid hex character in <strong>chucknorris</strong>, the value turns into: <code>c00c00000000</code>(<strong>0 for all values that were invalid</strong>). </li>
-<li>The browser then divides the result into 3 groupds: <code>Red = c00c</code>, <code>Green = 0000</code>, <code>Blue = 0000</code>.</li>
-<li>Since valid hex values for html backgrounds only contain 2 digits for each color type (<strong>r</strong>, <strong>g</strong>, <strong>b</strong>), the last 2 digits are truncated from each group, leaving an rgb value of <code>c00000</code> which is a brick-reddish toned color.</li>
-</ul>
-</tr></td><tr><td><p>The reason is the browser can <strong>not understand</strong> it and try to somehow translate it to what it can understand and in this case into a hexadecimal value!...</p>
-
-<p><code>chucknorris</code> starts with <code>c</code> which is recognised character in hexadecimal, also it's converting all unrecognised characters into <code>0</code>!</p>
-
-<p>So <code>chucknorris</code> in hexadecimal format becomes: <code>c00c00000000</code>, all other characters become <code>0</code> and <code>c</code> remains where they are...</p>
-
-<p>Now they get divided by 3 for <code>RGB</code>(red, green, blue)... <code>R: c00c, G: 0000, B:0000</code>...</p>
-
-<p>But we know valid hexadecimal for RGB is just 2 characters, means <code>R: c0, G: 00, B:00</code></p>
-
-<p>So the real result is:</p>
-
-<pre><code>bgcolor="#c00000";
-</code></pre>
-
-<p>I also added the steps in the image as a quick reference for you:</p>
-
-<p><a href="https://i.stack.imgur.com/sc8bX.jpg" rel="noreferrer"><img src="https://i.stack.imgur.com/sc8bX.jpg" alt="Why does HTML think “chucknorris” is a colour?"></a></p>
-</tr></td><tr><td><p><strong>chucknorris</strong> starts with <strong>c</strong>, and the browser reads it into a hexadecimal value.</p>
+<p>By default, copying an object means copying its members:</p>
 
 <blockquote>
-  <p>Because A, B, C, D, E, and F are <a href="https://en.wikipedia.org/wiki/Hexadecimal" rel="noreferrer">characters in hexadecimal</a>.</p>
+  <p>The implicitly-defined copy constructor for a non-union class X performs a memberwise copy of its subobjects.
+  [n3126.pdf section 12.8 §16]</p>
+  
+  <p>The implicitly-defined copy assignment operator for a non-union class X performs memberwise copy assignment
+  of its subobjects.
+  [n3126.pdf section 12.8 §30]</p>
 </blockquote>
 
-<p>The browser converts <code>chucknorris</code> to a hexadecimal value, <code>C00C00000000</code>.</p>
+<h2>Implicit definitions</h2>
 
-<p>Then the <code>C00C00000000</code> hexadecimal value is converted to <strong>RGB</strong> format (divided by 3):</p>
+<p>The implicitly-defined special member functions for <code>person</code> look like this:</p>
 
-<blockquote>
-  <p><code>C00C00000000</code> => <code>R:C00C, G:0000, B:0000</code></p>
-</blockquote>
-
-<p>The browser needs only two digits to indicate the colour:</p>
-
-<blockquote>
-  <p><code>R:C00C, G:0000, B:0000</code> => <code>R:C0, G:00, B:00</code> => <code>C00000</code></p>
-</blockquote>
-
-<p>Finally, show <code>bgcolor = C00000</code> in the web browser.</p>
-
-<p>Here's an example demonstrating it:</p>
-
-<p><div class="snippet" data-lang="js" data-hide="false" data-console="true" data-babel="false">
-<div class="snippet-code">
-<pre class="snippet-code-html lang-html prettyprint-override"><code>&lt;table&gt;
-  &lt;tr&gt;
-    &lt;td bgcolor="chucknorris" cellpadding="10" width="150" align="center"&gt;chucknorris&lt;/td&gt;
-    &lt;td bgcolor="c00c00000000" cellpadding="10" width="150" align="center"&gt;c00c00000000&lt;/td&gt;
-    &lt;td bgcolor="c00000" cellpadding="10" width="150" align="center"&gt;c00000&lt;/td&gt;
-  &lt;/tr&gt;
-&lt;/table&gt;</code></pre>
-</div>
-</div>
-</p>
-</tr></td><tr><td><p>The <a href="https://www.w3.org/TR/html5/infrastructure.html#rules-for-parsing-a-legacy-color-value" rel="noreferrer">rules for parsing colors on legacy attributes</a> involves additional steps than those mentioned in existing answers. The truncate component to 2 digits part is described as:</p>
-
-<ol>
-<li>Discard all characters except the last 8</li>
-<li>Discard leading zeros one by one <strong>as long as all components have a leading zero</strong></li>
-<li>Discard all characters except the first 2</li>
-</ol>
-
-<p>Some examples:</p>
-
-<pre class="lang-none prettyprint-override"><code>oooFoooFoooF
-000F 000F 000F                &lt;- replace, pad and chunk
-0F 0F 0F                      &lt;- leading zeros truncated
-0F 0F 0F                      &lt;- truncated to 2 characters from right
-
-oooFooFFoFFF
-000F 00FF 0FFF                &lt;- replace, pad and chunk
-00F 0FF FFF                   &lt;- leading zeros truncated
-00 0F FF                      &lt;- truncated to 2 characters from right
-
-ABCooooooABCooooooABCoooooo
-ABC000000 ABC000000 ABC000000 &lt;- replace, pad and chunk
-BC000000 BC000000 BC000000    &lt;- truncated to 8 characters from left
-BC BC BC                      &lt;- truncated to 2 characters from right
-
-AoCooooooAoCooooooAoCoooooo
-A0C000000 A0C000000 A0C000000 &lt;- replace, pad and chunk
-0C000000 0C000000 0C000000    &lt;- truncated to 8 characters from left
-C000000 C000000 C000000       &lt;- leading zeros truncated
-C0 C0 C0                      &lt;- truncated to 2 characters from right
-</code></pre>
-
-<p>Below is a partial implementation of the algorithm. It does not handle errors or cases where the user enters a valid color.</p>
-
-<p><div class="snippet" data-lang="js" data-hide="true" data-console="false" data-babel="false">
-<div class="snippet-code snippet-currently-hidden">
-<pre class="snippet-code-js lang-js prettyprint-override"><code>function parseColor(input) {
-  // todo: return error if input is ""
-  input = input.trim();
-  // todo: return error if input is "transparent"
-  // todo: return corresponding #rrggbb if input is a named color
-  // todo: return #rrggbb if input matches #rgb
-  // todo: replace unicode code points greater than U+FFFF with 00
-  if (input.length &gt; 128) {
-    input = input.slice(0, 128);
-  }
-  if (input.charAt(0) === "#") {
-    input = input.slice(1);
-  }
-  input = input.replace(/[^0-9A-Fa-f]/g, "0");
-  while (input.length === 0 || input.length % 3 &gt; 0) {
-    input += "0";
-  }
-  var r = input.slice(0, input.length / 3);
-  var g = input.slice(input.length / 3, input.length * 2 / 3);
-  var b = input.slice(input.length * 2 / 3);
-  if (r.length &gt; 8) {
-    r = r.slice(-8);
-    g = g.slice(-8);
-    b = b.slice(-8);
-  }
-  while (r.length &gt; 2 &amp;&amp; r.charAt(0) === "0" &amp;&amp; g.charAt(0) === "0" &amp;&amp; b.charAt(0) === "0") {
-    r = r.slice(1);
-    g = g.slice(1);
-    b = b.slice(1);
-  }
-  if (r.length &gt; 2) {
-    r = r.slice(0, 2);
-    g = g.slice(0, 2);
-    b = b.slice(0, 2);
-  }
-  return "#" + r.padStart(2, "0") + g.padStart(2, "0") + b.padStart(2, "0");
+<pre><code>// 1. copy constructor
+person(const person&amp; that) : name(that.name), age(that.age)
+{
 }
 
-$(function() {
-  $("#input").on("change", function() {
-    var input = $(this).val();
-    var color = parseColor(input);
-    var $cells = $("#result tbody td");
-    $cells.eq(0).attr("bgcolor", input);
-    $cells.eq(1).attr("bgcolor", color);
+// 2. copy assignment operator
+person&amp; operator=(const person&amp; that)
+{
+    name = that.name;
+    age = that.age;
+    return *this;
+}
 
-    var color1 = $cells.eq(0).css("background-color");
-    var color2 = $cells.eq(1).css("background-color");
-    $cells.eq(2).empty().append("bgcolor: " + input, "&lt;br&gt;", "getComputedStyle: " + color1);
-    $cells.eq(3).empty().append("bgcolor: " + color, "&lt;br&gt;", "getComputedStyle: " + color2);
-  });
-});</code></pre>
-<pre class="snippet-code-css lang-css prettyprint-override"><code>body { font: medium monospace; }
-input { width: 20em; }
-table { table-layout: fixed; width: 100%; }</code></pre>
-<pre class="snippet-code-html lang-html prettyprint-override"><code>&lt;script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"&gt;&lt;/script&gt;
+// 3. destructor
+~person()
+{
+}
+</code></pre>
 
-&lt;p&gt;&lt;input id="input" placeholder="Enter color e.g. chucknorris"&gt;&lt;/p&gt;
-&lt;table id="result"&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Left Color&lt;/th&gt;
-      &lt;th&gt;Right Color&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&amp;nbsp;&lt;/td&gt;
-      &lt;td&gt;&amp;nbsp;&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&amp;nbsp;&lt;/td&gt;
-      &lt;td&gt;&amp;nbsp;&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;</code></pre>
-</div>
-</div>
-</p>
+<p>Memberwise copying is exactly what we want in this case:
+<code>name</code> and <code>age</code> are copied, so we get a self-contained, independent <code>person</code> object.
+The implicitly-defined destructor is always empty.
+This is also fine in this case since we did not acquire any resources in the constructor.
+The members' destructors are implicitly called after the <code>person</code> destructor is finished:</p>
+
+<blockquote>
+  <p>After executing the body of the destructor and destroying any automatic objects allocated within the body,
+  a destructor for class X calls the destructors for X's direct [...] members
+  [n3126.pdf 12.4 §6]</p>
+</blockquote>
+
+<h1>Managing resources</h1>
+
+<p>So when should we declare those special member functions explicitly?
+When our class <em>manages a resource</em>, that is,
+when an object of the class is <em>responsible</em> for that resource.
+That usually means the resource is <em>acquired</em> in the constructor
+(or passed into the constructor) and <em>released</em> in the destructor.</p>
+
+<p>Let us go back in time to pre-standard C++.
+There was no such thing as <code>std::string</code>, and programmers were in love with pointers.
+The <code>person</code> class might have looked like this:</p>
+
+<pre><code>class person
+{
+    char* name;
+    int age;
+
+public:
+
+    // the constructor acquires a resource:
+    // in this case, dynamic memory obtained via new[]
+    person(const char* the_name, int the_age)
+    {
+        name = new char[strlen(the_name) + 1];
+        strcpy(name, the_name);
+        age = the_age;
+    }
+
+    // the destructor must release this resource via delete[]
+    ~person()
+    {
+        delete[] name;
+    }
+};
+</code></pre>
+
+<p>Even today, people still write classes in this style and get into trouble:
+"<em>I pushed a person into a vector and now I get crazy memory errors!</em>"
+Remember that by default, copying an object means copying its members,
+but copying the <code>name</code> member merely copies a pointer, <em>not</em> the character array it points to!
+This has several unpleasant effects:</p>
+
+<ol>
+<li>Changes via <code>a</code> can be observed via <code>b</code>.</li>
+<li>Once <code>b</code> is destroyed, <code>a.name</code> is a dangling pointer.</li>
+<li>If <code>a</code> is destroyed, deleting the dangling pointer yields <a href="https://stackoverflow.com/questions/2397984/">undefined behavior</a>.</li>
+<li>Since the assignment does not take into account what <code>name</code> pointed to before the assignment,
+sooner or later you will get memory leaks all over the place.</li>
+</ol>
+
+<h2>Explicit definitions</h2>
+
+<p>Since memberwise copying does not have the desired effect, we must define the copy constructor and the copy assignment operator explicitly to make deep copies of the character array:</p>
+
+<pre><code>// 1. copy constructor
+person(const person&amp; that)
+{
+    name = new char[strlen(that.name) + 1];
+    strcpy(name, that.name);
+    age = that.age;
+}
+
+// 2. copy assignment operator
+person&amp; operator=(const person&amp; that)
+{
+    if (this != &amp;that)
+    {
+        delete[] name;
+        // This is a dangerous point in the flow of execution!
+        // We have temporarily invalidated the class invariants,
+        // and the next statement might throw an exception,
+        // leaving the object in an invalid state :(
+        name = new char[strlen(that.name) + 1];
+        strcpy(name, that.name);
+        age = that.age;
+    }
+    return *this;
+}
+</code></pre>
+
+<p>Note the difference between initialization and assignment:
+we must tear down the old state before assigning to <code>name</code> to prevent memory leaks.
+Also, we have to protect against self-assignment of the form <code>x = x</code>.
+Without that check, <code>delete[] name</code> would delete the array containing the <em>source</em> string,
+because when you write <code>x = x</code>, both <code>this-&gt;name</code> and <code>that.name</code> contain the same pointer.</p>
+
+<h2>Exception safety</h2>
+
+<p>Unfortunately, this solution will fail if <code>new char[...]</code> throws an exception due to memory exhaustion.
+One possible solution is to introduce a local variable and reorder the statements:</p>
+
+<pre><code>// 2. copy assignment operator
+person&amp; operator=(const person&amp; that)
+{
+    char* local_name = new char[strlen(that.name) + 1];
+    // If the above statement throws,
+    // the object is still in the same state as before.
+    // None of the following statements will throw an exception :)
+    strcpy(local_name, that.name);
+    delete[] name;
+    name = local_name;
+    age = that.age;
+    return *this;
+}
+</code></pre>
+
+<p>This also takes care of self-assignment without an explicit check.
+An even more robust solution to this problem is the <a href="https://stackoverflow.com/questions/3279543/">copy-and-swap idiom</a>,
+but I will not go into the details of exception safety here.
+I only mentioned exceptions to make the following point: <strong>Writing classes that manage resources is hard.</strong></p>
+
+<h2>Noncopyable resources</h2>
+
+<p>Some resources cannot or should not be copied, such as file handles or mutexes.
+In that case, simply declare the copy constructor and copy assignment operator as <code>private</code> without giving a definition:</p>
+
+<pre><code>private:
+
+    person(const person&amp; that);
+    person&amp; operator=(const person&amp; that);
+</code></pre>
+
+<p>Alternatively, you can inherit from <code>boost::noncopyable</code> or declare them as deleted (in C++11 and above):</p>
+
+<pre><code>person(const person&amp; that) = delete;
+person&amp; operator=(const person&amp; that) = delete;
+</code></pre>
+
+<h2>The rule of three</h2>
+
+<p>Sometimes you need to implement a class that manages a resource.
+(Never manage multiple resources in a single class,
+this will only lead to pain.)
+In that case, remember the <strong>rule of three</strong>:</p>
+
+<blockquote>
+  <p>If you need to explicitly declare either the destructor,
+  copy constructor or copy assignment operator yourself,
+  you probably need to explicitly declare all three of them.</p>
+</blockquote>
+
+<p>(Unfortunately, this "rule" is not enforced by the C++ standard or any compiler I am aware of.)</p>
+
+<h2>The rule of five</h2>
+
+<p>From C++11 on, an object has 2 extra special member functions: the move constructor and move assignment. The rule of five states to implement these functions as well.</p>
+
+<p>An example with the signatures:</p>
+
+<pre><code>class person
+{
+    std::string name;
+    int age;
+
+public:
+    person(const std::string&amp; name, int age);        // Ctor
+    person(const person &amp;) = default;                // Copy Ctor
+    person(person &amp;&amp;) noexcept = default;            // Move Ctor
+    person&amp; operator=(const person &amp;) = default;     // Copy Assignment
+    person&amp; operator=(person &amp;&amp;) noexcept = default; // Move Assignment
+    ~person() noexcept = default;                    // Dtor
+};
+</code></pre>
+
+<h2>The rule of zero</h2>
+
+<p>The rule of 3/5 is also referred to as the rule of 0/3/5. The zero part of the rule states that you are allowed to not write any of the special member functions when creating your class.</p>
+
+<h1>Advice</h1>
+
+<p>Most of the time, you do not need to manage a resource yourself,
+because an existing class such as <code>std::string</code> already does it for you.
+Just compare the simple code using a <code>std::string</code> member
+to the convoluted and error-prone alternative using a <code>char*</code> and you should be convinced.
+As long as you stay away from raw pointer members, the rule of three is unlikely to concern your own code.</p>
+</tr></td><tr><td><p>The <a href="http://en.wikipedia.org/wiki/Rule_of_three_%28C%2B%2B_programming%29" rel="noreferrer">Rule of Three</a> is a rule of thumb for C++, basically saying </p>
+
+<blockquote>
+  <p>If your class needs any of</p>
+  
+  <ul>
+  <li>a <strong>copy constructor</strong>,</li>
+  <li>an <strong>assignment operator</strong>, </li>
+  <li>or a <strong>destructor</strong>, </li>
+  </ul>
+  
+  <p>defined explictly, then it is likely to need <strong>all three of them</strong>.</p>
+</blockquote>
+
+<p>The reasons for this is that all three of them are usually used to manage a resource, and if your class manages a resource, it usually needs to manage copying as well as freeing. </p>
+
+<p>If there is no good semantic for copying the resource your class manages, then consider to forbid copying by declaring (not <em><a href="https://stackoverflow.com/questions/1410563/what-is-the-difference-between-a-definition-and-a-declaration/1410632#1410632">defining</a></em>) the copy constructor and assignment operator as <code>private</code>. </p>
+
+<p>(Note that the forthcoming new version of the C++ standard (which is C++11) adds move semantics to C++, which will likely change the Rule of Three. However, I know too little about this to write a C++11 section about the Rule of Three.)</p>
+</tr></td><tr><td><p>Basically if you have a destructor (not the default destructor) it means that the class that you defined has some memory allocation. Suppose that the class is used outside by some client code or by you.</p>
+
+<pre><code>    MyClass x(a, b);
+    MyClass y(c, d);
+    x = y; // This is a shallow copy if assignment operator is not provided
+</code></pre>
+
+<p>If MyClass has only some primitive typed members a default assignment operator would work but if it has some pointer members and objects that do not have assignment operators the result would be unpredictable. Therefore we can say that if there is something to delete in destructor of a class, we might need a deep copy operator which means we should provide a copy constructor and assignment operator.</p>
+</tr></td><tr><td><p>What does copying an object mean? 
+There are a few ways you can copy objects--let's talk about the 2 kinds you're most likely referring to--deep copy and shallow copy.</p>
+
+<p>Since we're in an object-oriented language (or at least are assuming so), let's say you have a piece of memory allocated.  Since it's an OO-language, we can easily refer to chunks of memory we allocate because they are usually primitive variables (ints, chars, bytes) or classes we defined that are made of our own types and primitives.  So let's say we have a class of Car as follows:</p>
+
+<pre><code>class Car //A very simple class just to demonstrate what these definitions mean.
+//It's pseudocode C++/Javaish, I assume strings do not need to be allocated.
+{
+private String sPrintColor;
+private String sModel;
+private String sMake;
+
+public changePaint(String newColor)
+{
+   this.sPrintColor = newColor;
+}
+
+public Car(String model, String make, String color) //Constructor
+{
+   this.sPrintColor = color;
+   this.sModel = model;
+   this.sMake = make;
+}
+
+public ~Car() //Destructor
+{
+//Because we did not create any custom types, we aren't adding more code.
+//Anytime your object goes out of scope / program collects garbage / etc. this guy gets called + all other related destructors.
+//Since we did not use anything but strings, we have nothing additional to handle.
+//The assumption is being made that the 3 strings will be handled by string's destructor and that it is being called automatically--if this were not the case you would need to do it here.
+}
+
+public Car(const Car &amp;other) // Copy Constructor
+{
+   this.sPrintColor = other.sPrintColor;
+   this.sModel = other.sModel;
+   this.sMake = other.sMake;
+}
+public Car &amp;operator =(const Car &amp;other) // Assignment Operator
+{
+   if(this != &amp;other)
+   {
+      this.sPrintColor = other.sPrintColor;
+      this.sModel = other.sModel;
+      this.sMake = other.sMake;
+   }
+   return *this;
+}
+
+}
+</code></pre>
+
+<p>A deep copy is if we declare an object and then create a completely separate copy of the object...we end up with 2 objects in 2 completely sets of memory.</p>
+
+<pre><code>Car car1 = new Car("mustang", "ford", "red");
+Car car2 = car1; //Call the copy constructor
+car2.changePaint("green");
+//car2 is now green but car1 is still red.
+</code></pre>
+
+<p>Now let's do something strange.  Let's say car2 is either programmed wrong or purposely meant to share the actual memory that car1 is made of.  (It's usually a mistake to do this and in classes is usually the blanket it's discussed under.)  Pretend that anytime you ask about car2, you're really resolving a pointer to car1's memory space...that's more or less what a shallow copy is.</p>
+
+<pre><code>//Shallow copy example
+//Assume we're in C++ because it's standard behavior is to shallow copy objects if you do not have a constructor written for an operation.
+//Now let's assume I do not have any code for the assignment or copy operations like I do above...with those now gone, C++ will use the default.
+
+ Car car1 = new Car("ford", "mustang", "red"); 
+ Car car2 = car1; 
+ car2.changePaint("green");//car1 is also now green 
+ delete car2;/*I get rid of my car which is also really your car...I told C++ to resolve 
+ the address of where car2 exists and delete the memory...which is also
+ the memory associated with your car.*/
+ car1.changePaint("red");/*program will likely crash because this area is
+ no longer allocated to the program.*/
+</code></pre>
+
+<p>So regardless of what language you're writing in, be very careful about what you mean when it comes to copying objects because most of the time you want a deep copy.</p>
+
+<p>What are the copy constructor and the copy assignment operator?
+I have already used them above.  The copy constructor is called when you type code such as <code>Car car2 = car1;</code>  Essentially if you declare a variable and assign it in one line, that's when the copy constructor is called.  The assignment operator is what happens when you use an equal sign--<code>car2 = car1;</code>.  Notice <code>car2</code> isn't declared in the same statement.  The two chunks of code you write for these operations are likely very similar.  In fact the typical design pattern has another function you call to set everything once you're satisfied the initial copy/assignment is legitimate--if you look at the longhand code I wrote, the functions are nearly identical.</p>
+
+<p>When do I need to declare them myself? 
+If you are not writing code that is to be shared or for production in some manner, you really only need to declare them when you need them.  You do need to be aware of what your program language does if you choose to use it 'by accident' and didn't make one--i.e. you get the compiler default.  I rarely use copy constructors for instance, but assignment operator overrides are very common.  Did you know you can override what addition, subtraction, etc. mean as well?</p>
+
+<p>How can I prevent my objects from being copied?
+Override all of the ways you're allowed to allocate memory for your object with a private function is a reasonable start.  If you really don't want people copying them, you could make it public and alert the programmer by throwing an exception and also not copying the object.  </p>
+</tr></td><tr><td><p>The law of the big three is as specified above.</p>
+
+<p>An easy example, in plain English, of the kind of problem it solves:</p>
+
+<p><strong>Non default destructor</strong></p>
+
+<p>You allocated memory in your constructor and so you need to write a destructor to delete it.  Otherwise you will cause a memory leak.</p>
+
+<p>You might think that this is job done. </p>
+
+<p>The problem will be, if a copy is made of your object, then the copy will point to the same memory as the original object.</p>
+
+<p>Once, one of these deletes the memory in its destructor, the other will have a pointer to invalid memory (this is called a dangling pointer) when it tries to use it things are going to get hairy.</p>
+
+<p>Therefore, you write a copy constructor so that it allocates new objects their own pieces of memory to destroy.</p>
+
+<p><strong>Assignment operator and copy constructor</strong></p>
+
+<p>You allocated memory in your constructor to a member pointer of your class.  When you copy an object of this class the default assignment operator and copy constructor will copy the value of this member pointer to the new object.</p>
+
+<p>This means that the new object and the old object will be pointing at the same piece of memory so when you change it in one object it will be changed for the other objerct too.  If one object deletes this memory the other will carry on trying to use it - eek.</p>
+
+<p>To resolve this you write your own version of the copy constructor and assignment operator.  Your versions allocate separate memory to the new objects and copy across the values that the first pointer is pointing to rather than its address.</p>
+</tr></td><tr><td><p>Rule of three in C++ is a fundamental principle of the design and the development of three requirements that if there is clear definition in one of the following member function, then the programmer should define the other two members functions together. Namely the following three member functions are indispensable: destructor, copy constructor, copy assignment operator.</p>
+
+<p>Copy constructor  in C++ is a special constructor. It is used to build a new object, which is the new object equivalent to a copy of an existing object.</p>
+
+<p>Copy assignment operator is a special assignment operator that is usually used to specify an existing object to others of the same type of object.</p>
+
+<p>There are quick examples:</p>
+
+<pre><code>// default constructor
+My_Class a;
+
+// copy constructor
+My_Class b(a);
+
+// copy constructor
+My_Class c = a;
+
+// copy assignment operator
+b = a;
+</code></pre>
+</tr></td><tr><td><p>Many of the existing answers already touch the copy constructor, assignment operator and destructor.
+However, in post C++11, the introduction of move semantic may expand this beyond 3.</p>
+
+<p>Recently Michael Claisse gave a talk that touches this topic:
+<a href="http://channel9.msdn.com/events/CPP/C-PP-Con-2014/The-Canonical-Class" rel="noreferrer">http://channel9.msdn.com/events/CPP/C-PP-Con-2014/The-Canonical-Class</a></p>
+</tr></td><tr><td><blockquote>
+  <p>When do I need to declare them myself?</p>
+</blockquote>
+
+<p>The Rule of Three states that if you declare any of a </p>
+
+<ol>
+<li>copy constructor</li>
+<li>copy assignment operator</li>
+<li>destructor</li>
+</ol>
+
+<p>then you should declare all three. It grew out of the observation that the need to take over the meaning of a copy operation almost always stemmed from the class performing some kind of resource management, and that almost always implied that </p>
+
+<ul>
+<li><p>whatever resource management was being done in one copy operation probably needed to be done in the other copy operation and </p></li>
+<li><p>the class destructor would also be participating in management of the resource (usually releasing it). The classic resource to be managed was memory, and this is why all Standard Library classes that
+manage memory (e.g., the STL containers that perform dynamic memory management) all declare “the big three”: both copy operations and a destructor.</p></li>
+</ul>
+
+<p><strong>A consequence of the Rule of Three</strong> is that the presence of a user-declared destructor indicates that simple member wise copy is unlikely to be appropriate for the copying operations in the class. That, in turn, suggests that if a class declares a destructor, the copy operations probably shouldn’t be automatically generated, because they wouldn’t do the right thing. At the time C++98 was adopted, the significance of this line of reasoning was not fully appreciated, so in C++98, the existence of a user declared destructor had no impact on compilers’ willingness to generate copy operations. That continues to be the case in C++11, but only because restricting the conditions under which the copy operations are generated would break too much legacy code.</p>
+
+<blockquote>
+  <p>How can I prevent my objects from being copied?</p>
+</blockquote>
+
+<p>Declare copy constructor &amp; copy assignment operator as private access specifier.</p>
+
+<pre><code>class MemoryBlock
+{
+public:
+
+//code here
+
+private:
+MemoryBlock(const MemoryBlock&amp; other)
+{
+   cout&lt;&lt;"copy constructor"&lt;&lt;endl;
+}
+
+// Copy assignment operator.
+MemoryBlock&amp; operator=(const MemoryBlock&amp; other)
+{
+ return *this;
+}
+};
+
+int main()
+{
+   MemoryBlock a;
+   MemoryBlock b(a);
+}
+</code></pre>
+
+<p>In C++11 onwards you can also declare copy constructor &amp; assignment operator deleted</p>
+
+<pre><code>class MemoryBlock
+{
+public:
+MemoryBlock(const MemoryBlock&amp; other) = delete
+
+// Copy assignment operator.
+MemoryBlock&amp; operator=(const MemoryBlock&amp; other) =delete
+};
+
+
+int main()
+{
+   MemoryBlock a;
+   MemoryBlock b(a);
+}
+</code></pre>
 </tr></td>
