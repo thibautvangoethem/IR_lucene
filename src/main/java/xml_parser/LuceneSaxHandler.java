@@ -85,9 +85,10 @@ public class LuceneSaxHandler extends DefaultHandler {
 			doc.add(new IntPoint("id", Integer.parseInt(id)));
 			doc.add(new TextField("id", id, Field.Store.YES));
 			doc.add(new SortedDocValuesField("id", new BytesRef(id)));
-			if (title != null)
+			if (title != null) {
 				doc.add(new TextField("title", SpecialCharConverter.encode(title), Field.Store.NO));
 				doc.add(new TextField("plainTitle", title, Field.Store.YES));
+			}
 			doc.add(new TextField("body", body, Field.Store.YES));
 //		doc.add(new IntPoint("score", score));
 			doc.add(new NumericDocValuesField("score", score));
