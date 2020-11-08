@@ -94,7 +94,7 @@ public class LuceneSaxHandler extends DefaultHandler {
 			doc.add(new NumericDocValuesField("score", score));
 			doc.add(new StoredField("answer", Boolean.toString(answer)));
 			if (tags != null) {
-				doc.add(new TextField("tags", tags, Field.Store.YES));
+				doc.add(new TextField("tags", SpecialCharConverter.encode(tags), Field.Store.YES));
 			}
 			writer.addDocument(doc);
 		}

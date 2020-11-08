@@ -14,28 +14,28 @@ public class SpecialCharConverter {
 //	"\\" ,"+", "-" ,"=" ,"&&" ,"||" ,">", "<","!" ,"(" ,")" ,"{", "}" ,"[" ,"]" ,"^" ,"\"", "~" ,"*" ,"?" ,":" ,"/"
 	private static List<String> regexMatchList=Arrays.asList("\\\\" ,"\\+", "-" ,"=" ,"&&" ,"\\|\\|" ,">", "<","\\!" ,"[(]" ,"[)]" ,"\\{", "\\}" ,"\\[" ,"\\]" ,"\\^" ,"\"", "~" ,"\\*" ,"\\?" ,":" ,"/");
 	private static Map<String, String> specialCharToStringMap  = new HashMap<String, String>() {{
-	    put("\\", "backslash");
-	    put("+", "plus");
-	    put("-", "minus");
-	    put("=", "equal");
-	    put("||", "logor");
-	    put("&&", "logand");//not just 'and' so it isn't removed in the englishfilter of the englishanalyzer
-	    put(">", "largerthen");
-	    put("<", "smallerthen");
-	    put("!", "exclamation");
-	    put("(", "leftbracket");
-	    put(")", "rigthbracket");
-	    put("{", "leftcurly");
-	    put("}", "rightcurly");
-	    put("[", "leftsquare");
-	    put("]", "rightsquare");
-	    put("^", "caret");
-	    put("\"", "quotation");
-	    put("~", "tilda");
-	    put("*", "star");
-	    put("?", "question");
-	    put(":", "doublepoint");
-	    put("/", "forwarslash");
+	    put("\\", " backslash");
+	    put("+", " plus");
+	    put("-", " minus");
+	    put("=", " equal");
+	    put("||", " logor");
+	    put("&&", " logand");//not just 'and' so it isn't removed in the englishfilter of the englishanalyzer
+	    put(">", " largerthen");
+	    put("<", " smallerthen");
+	    put("!", " exclamation");
+	    put("(", " leftbracket");
+	    put(")", " rigthbracket");
+	    put("{", " leftcurly");
+	    put("}", " rightcurly");
+	    put("[", " leftsquare");
+	    put("]", " rightsquare");
+	    put("^", " caret");
+	    put("\"", " quotation");
+	    put("~", " tilda");
+	    put("*", " star");
+	    put("?", " question");
+	    put(":", " doublepoint");
+	    put("/", " forwarslash");
 	}};
 	
 	public static String encode(String input) {

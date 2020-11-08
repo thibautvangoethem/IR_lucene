@@ -3,17 +3,22 @@ package lucene_assignment;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.lucene.document.Document;
 
-import com.sun.javadoc.Doc;
-
 public class ResultsToHtmlPage {
 
 	public static void toHtml(String originalquery, Map<Document, List<Document>> results) {
 		try {
+			
+			if(!Files.exists(Path.of("results"),  LinkOption.NOFOLLOW_LINKS)) {
+				new File("results").mkdir();
+			}
 			FileWriter index = createFile("results/index.html");
 			index.write("<h3>Found " + results.size() + " hit(s) for query: " + originalquery + "</h3>");
 			int docIndex = 1;

@@ -31,7 +31,7 @@ public class ScoreValueSource extends DoubleValuesSource {
 		return new DoubleValues() {
 			@Override
 			public double doubleValue() throws IOException {
-				return decoder.applyAsDouble(Math.min(values.longValue()/1000,3));
+				return decoder.applyAsDouble(Math.min(values.longValue()/1000,1));
 			}
 
 			@Override

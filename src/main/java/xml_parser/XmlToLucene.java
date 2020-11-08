@@ -49,7 +49,10 @@ public class XmlToLucene {
 			factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, false);
 			SAXParser saxParser = factory.newSAXParser();
 			saxParser.parse(file, saxHandler);
+		}catch (SaxStopException e) {
+			System.out.println("sax stop exception thrown, the parsing has been stopped");
 		}
+		
 	}
 
 }
