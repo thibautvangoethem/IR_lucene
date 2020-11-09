@@ -42,7 +42,7 @@ public class QuerySearcher {
 			EnglishAnalyzer analyzer = new EnglishAnalyzer();
 			Directory index = FSDirectory.open(Paths.get("./index"));
 
-			String input = "junit test ";
+			String input = "c++ override operators";
 			String query = SpecialCharConverter.encode(input);
 //		String query=escapeProhibitedLuceneCharacters(input);
 			System.out.println(query);
@@ -59,11 +59,12 @@ public class QuerySearcher {
 			queryBuilder.add(qBody, Occur.SHOULD);
 			queryBuilder.add(qTags, Occur.SHOULD);
 			BooleanQuery q = queryBuilder.build();
-			DoubleValuesSource valueSource = new ScoreValueSource("score");
+//			DoubleValuesSource valueSource = new ScoreValueSource("score");
+			DoubleValuesSource valueSource = DoubleValuesSource.fromDoubleField("score");
 			FunctionScoreQuery scoreQuery = FunctionScoreQuery.boostByValue(q, valueSource);
 //
 			GroupingSearch gSearch = new GroupingSearch("id");
-//		gSearch.setAllGroups(true);
+//			gSearch.setAllGroups(true);
 			TopGroups<BytesRef> gSearchDocuments = gSearch.search(searcher, scoreQuery, 0, 10);
 			GroupDocs<BytesRef>[] test = gSearchDocuments.groups;
 
@@ -74,8 +75,8 @@ public class QuerySearcher {
 					String id = doc.get("id");
 					getDocumentForId(analyzer, searcher, id, resultMap);
 
-//					Explanation expl = searcher.explain(scoreQuery, scoredoc.doc);
-//					System.out.println(expl);
+					Explanation expl = searcher.explain(scoreQuery, scoredoc.doc);
+					System.out.println(expl);
 				}
 			}
 

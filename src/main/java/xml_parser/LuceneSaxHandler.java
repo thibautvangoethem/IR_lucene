@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.DoubleDocValuesField;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.IntPoint;
 import org.apache.lucene.document.NumericDocValuesField;
@@ -41,6 +42,13 @@ public class LuceneSaxHandler extends DefaultHandler {
 				String title = attributes.getValue("Title");
 				String body = attributes.getValue("Body");
 				int score = Integer.parseInt(attributes.getValue("Score"));
+				double scaled_score;
+				if (score > 1000) {
+					scaled_score = 2.0;
+				}
+				else {
+					scaled_score = 1 + score/1000.0;
+				}
 				boolean answer = true;
 				String id = "";
 				if (attributes.getValue("PostTypeId").equals("1")) {
@@ -55,7 +63,7 @@ public class LuceneSaxHandler extends DefaultHandler {
 					tags = tags.substring(1, tags.length() - 1);
 					tags = tags.replaceAll("><", " ");
 				}
-				addDoc(id, title, body, tags, score, answer);
+				addDoc(id, title, body, tags, scaled_score, answer);
 				counter++;
 				if (counter > 100000) {
 					counter = 0;
@@ -78,7 +86,7 @@ public class LuceneSaxHandler extends DefaultHandler {
 
 	}
 
-	private void addDoc(String id, String title, String body, String tags, int score, boolean answer)
+	private void addDoc(String id, String title, String body, String tags, double score, boolean answer)
 			throws IOException {
 		if (id != null) {
 			Document doc = new Document();
@@ -90,8 +98,9 @@ public class LuceneSaxHandler extends DefaultHandler {
 				doc.add(new TextField("plainTitle", title, Field.Store.YES));
 			}
 			doc.add(new TextField("body", body, Field.Store.YES));
-//		doc.add(new IntPoint("score", score));
-			doc.add(new NumericDocValuesField("score", score));
+//			doc.add(new IntPoint("score", score));
+			doc.add(new DoubleDocValuesField("score", score));
+//			doc.add(new NumericDocValuesField("score", score));
 			doc.add(new StoredField("answer", Boolean.toString(answer)));
 			if (tags != null) {
 				doc.add(new TextField("tags", SpecialCharConverter.encode(tags), Field.Store.YES));
