@@ -42,9 +42,8 @@ public class QuerySearcher {
 			EnglishAnalyzer analyzer = new EnglishAnalyzer();
 			Directory index = FSDirectory.open(Paths.get("./index"));
 
-			String input = "c++ override operators";
+			String input = "What is the --> operator";
 			String query = SpecialCharConverter.encode(input);
-//		String query=escapeProhibitedLuceneCharacters(input);
 			System.out.println(query);
 			Query qTitle = new QueryParser("title", analyzer).parse(query);
 			Query qBody = new QueryParser("body", analyzer).parse(query);
@@ -59,25 +58,19 @@ public class QuerySearcher {
 			queryBuilder.add(qBody, Occur.SHOULD);
 			queryBuilder.add(qTags, Occur.SHOULD);
 			BooleanQuery q = queryBuilder.build();
-//			DoubleValuesSource valueSource = new ScoreValueSource("score");
 			DoubleValuesSource valueSource = DoubleValuesSource.fromDoubleField("score");
 			FunctionScoreQuery scoreQuery = FunctionScoreQuery.boostByValue(q, valueSource);
-//
-			GroupingSearch gSearch = new GroupingSearch("id");
-//			gSearch.setAllGroups(true);
-			TopGroups<BytesRef> gSearchDocuments = gSearch.search(searcher, scoreQuery, 0, 10);
-			GroupDocs<BytesRef>[] test = gSearchDocuments.groups;
+			
+			TopDocs searchDocuments = searcher.search(scoreQuery, 10);
 
 			Map<Document, List<Document>> resultMap = new LinkedHashMap<>();
-			for (GroupDocs<BytesRef> group : test) {
-				for (ScoreDoc scoredoc : group.scoreDocs) {
-					Document doc = searcher.doc(scoredoc.doc);
-					String id = doc.get("id");
-					getDocumentForId(analyzer, searcher, id, resultMap);
+			for (ScoreDoc scoredoc : searchDocuments.scoreDocs) {
+				Document doc = searcher.doc(scoredoc.doc);
+				String id = doc.get("id");
+				getDocumentForId(analyzer, searcher, id, resultMap);
 
-					Explanation expl = searcher.explain(scoreQuery, scoredoc.doc);
-					System.out.println(expl);
-				}
+				Explanation expl = searcher.explain(scoreQuery, scoredoc.doc);
+				System.out.println(expl);
 			}
 
 			ResultsToHtmlPage.toHtml(input, resultMap);
