@@ -1,7 +1,7 @@
 # IR_lucene
 This project is written in java 11 with the help of maven as dependency/build system.
 
-##run the project
+## run the project
 Maven setup:  
 The pom.xml can be found in the root of the project.  
 Import processes will be different depending on your IDE, Here are instructions for [intelij](https://www.jetbrains.com/help/idea/maven-support.html#javaee_maven), [eclipse](https://vaadin.com/learn/tutorials/import-maven-project-eclipse])  
