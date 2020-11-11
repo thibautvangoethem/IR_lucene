@@ -32,16 +32,17 @@ import org.apache.lucene.store.FSDirectory;
 
 public class QuerySearcher {
 	public static void main(String[] args) throws IOException, ParseException {
+		
+		System.out.println("Please enter youre search query");
+		Scanner in = new Scanner(System.in);
+		String input = in.nextLine();
+		in.close();
+		
 		long startTime = new Date().getTime();
 		try {
 
 			EnglishAnalyzer analyzer = new EnglishAnalyzer();
 			Directory index = FSDirectory.open(Paths.get("./index"));
-			
-			System.out.println("Please enter youre search query");
-			Scanner in = new Scanner(System.in);
-			String input = in.nextLine();
-			in.close();
 			String query = SpecialCharConverter.encode(input);
 			System.out.println("searching for: ");
 			System.out.println(input);
