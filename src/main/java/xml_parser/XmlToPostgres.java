@@ -6,9 +6,7 @@ import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
@@ -28,8 +26,6 @@ public class XmlToPostgres {
 		String url = Settings.getInstance().getJdbc_string();
 		System.out.println("getting file");
 		File file = new File(Settings.getInstance().getDump_location());
-//		URL resource = XmlToPostgres.class.getClassLoader().getResource("small.xml");
-//		File file = new File(resource.toURI());
 		System.out.println("start unmarshelling");
 		String inputStatement = "INSERT INTO public.documents"
 				+ "(Id, PostTypeId, AcceptedAnswerId, ParentId,CreationDate, Score, ViewCount, Body, LastEditDate, LastActivityDate, Title, Tags, AnswerCount, CommentCount, FavoriteCount)"
