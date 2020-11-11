@@ -11,8 +11,6 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
-import xml_parser.XmlToPostgres;
-
 //thanks http://pojo.sodhanalibrary.com/pojoFromXSD.html
 @XmlRootElement(name = "settings")
 public class Settings {
@@ -27,7 +25,7 @@ public class Settings {
 	public static Settings getInstance() {
 		if(instance==null) {
 			try {    
-				URL resource = XmlToPostgres.class.getClassLoader().getResource("settings.xml");
+				URL resource = Settings.class.getClassLoader().getResource("settings.xml");
 	            File file = new File(resource.toURI());    
 	            JAXBContext jaxbContext = JAXBContext.newInstance(Settings.class);    
 	         
