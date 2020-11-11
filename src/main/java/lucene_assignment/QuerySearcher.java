@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
@@ -36,10 +37,14 @@ public class QuerySearcher {
 
 			EnglishAnalyzer analyzer = new EnglishAnalyzer();
 			Directory index = FSDirectory.open(Paths.get("./index"));
-
-			String input = "What is the --> operator";
+			
+			System.out.println("Please enter youre search query");
+			Scanner in = new Scanner(System.in);
+			String input = in.nextLine();
+			in.close();
 			String query = SpecialCharConverter.encode(input);
-			System.out.println(query);
+			System.out.println("searching for: ");
+			System.out.println(input);
 			Query qTitle = new QueryParser("title", analyzer).parse(query);
 			Query qBody = new QueryParser("body", analyzer).parse(query);
 			Query qTags = new QueryParser("tags", analyzer).parse(query);
@@ -64,8 +69,8 @@ public class QuerySearcher {
 				String id = doc.get("id");
 				getDocumentForId(analyzer, searcher, id, resultMap);
 
-				Explanation expl = searcher.explain(scoreQuery, scoredoc.doc);
-				System.out.println(expl);
+//				Explanation expl = searcher.explain(scoreQuery, scoredoc.doc);
+//				System.out.println(expl);
 			}
 
 			ResultsToHtmlPage.toHtml(input, resultMap);
