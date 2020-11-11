@@ -15,7 +15,7 @@ extra) This must not be the full datadump, a subset of the datadump can be made 
 3) Execute the XmlToLucene.java file as main class and let it run. This process will take up to 4 hours on the full datadump.  
 4) This will create a index folder in the root of this project, this index folder will logically be the lucene index.  
   
-Querying:
+Querying:  
 Make sure the indexing part has been done first.  
 1) Navigate to the src/main/java/lucene_assignment package.  
 2) Execute the QuerySearcher.java file as main class.  
